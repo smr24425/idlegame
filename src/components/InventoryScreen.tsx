@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { GameState, Equipment } from '../types/game';
-import { getItemConfig } from '../utils/gameLogic';
+import { getItemConfig, getEquipmentValue } from '../utils/gameLogic';
 import { Card, Button, Dialog, Checkbox } from 'antd-mobile';
 import { FormattedNumber } from './FormattedNumber';
 
@@ -43,15 +43,7 @@ export const InventoryScreen: React.FC<InventoryScreenProps> = ({ gameState, onE
     }
   };
 
-  const getTotalStats = (eq: Equipment): number => {
-    return (
-      (eq.stats.attack || 0) +
-      (eq.stats.defense || 0) +
-      (eq.stats.health || 0) +
-      (eq.stats.critRate || 0) * 100 +
-      (eq.stats.critDamage || 0) * 100
-    );
-  };
+
 
   const getTypeName = (type: Equipment['type']) => {
     const names = {
@@ -96,9 +88,9 @@ export const InventoryScreen: React.FC<InventoryScreenProps> = ({ gameState, onE
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '10px' }}>
             {gameState.inventory.equipment.map(eq => {
-              const totalStats = getTotalStats(eq);
+              const totalStats = getEquipmentValue(eq);
               const equipped = gameState.player.equipment[eq.type];
-              const equippedPower = equipped ? getTotalStats(equipped) : 0;
+              const equippedPower = equipped ? getEquipmentValue(equipped) : 0;
               const diff = totalStats - equippedPower;
               const isSameQuality = equipped && eq.rarity === equipped.rarity;
               const displayDiff = isSameQuality ? 0 : diff;

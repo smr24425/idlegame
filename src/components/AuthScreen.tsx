@@ -53,6 +53,7 @@ export const AuthScreen: React.FC = () => {
         <Form layout="horizontal" style={{ '--background-color': 'transparent' } as any}>
           <Form.Item label={<span style={{ color: '#FFF' }}>信箱</span>}>
             <Input
+              className='custom-input'
               type="email"
               placeholder="請輸入 Email"
               value={email}
@@ -62,6 +63,7 @@ export const AuthScreen: React.FC = () => {
           </Form.Item>
           <Form.Item label={<span style={{ color: '#FFF' }}>密碼</span>}>
             <Input
+              className='custom-input'
               type="password"
               placeholder="請輸入密碼"
               value={password}

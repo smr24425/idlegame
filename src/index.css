@@ -23,8 +23,6 @@
   --adm-border-color: rgba(255, 215, 0, 0.2);
   --adm-font-size-main: 16px;
   --adm-dialog-border-radius: 12px;
-
-  --adm-color-text: #000;
 }
 
 .equipment-dialog-content {
@@ -85,4 +83,8 @@ a {
 
 button {
   font-family: inherit;
+}
+
+.custom-input {
+  --adm-color-text: #000;
 }

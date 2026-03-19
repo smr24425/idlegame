@@ -330,19 +330,8 @@ export const useGameState = () => {
         const rarityIndex = ['white', 'green', 'blue', 'purple', 'gold'].indexOf(eq.rarity);
         const isRarityMatch = filters.some(f => f >= 1 && f <= 5 && rarityIndex === f - 1);
         const equipped = prev.player.equipment[eq.type];
-        const eqPower =
-          (eq.stats.attack || 0) +
-          (eq.stats.defense || 0) +
-          (eq.stats.health || 0) +
-          (eq.stats.critRate || 0) * 100 +
-          (eq.stats.critDamage || 0) * 100;
-        const equippedPower = equipped
-          ? (equipped.stats.attack || 0) +
-            (equipped.stats.defense || 0) +
-            (equipped.stats.health || 0) +
-            (equipped.stats.critRate || 0) * 100 +
-            (equipped.stats.critDamage || 0) * 100
-          : 0;
+        const eqPower = getEquipmentValue(eq);
+        const equippedPower = equipped ? getEquipmentValue(equipped) : 0;
         const isLowerOrEqualPower = filters.includes(6) && eqPower <= equippedPower;
         return isRarityMatch || isLowerOrEqualPower;
       });
