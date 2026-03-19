@@ -332,7 +332,7 @@ function App() {
           onSync={handleManualSync}
           onDownload={handleManualDownload}
         />
-        <div style={{ flex: 1, overflow: "auto", paddingBottom: "60px" }}>
+        <div style={{ flex: 1, overflow: "auto", paddingBottom: "calc(60px + env(safe-area-inset-bottom))" }}>
           {renderContent()}
         </div>
         <div
@@ -344,6 +344,7 @@ function App() {
             zIndex: 1000,
             background: "rgba(10, 10, 25, 0.9)",
             borderTop: "1px solid rgba(255, 215, 0, 0.25)",
+            paddingBottom: "env(safe-area-inset-bottom)",
           }}
         >
           <TabBar activeKey={uiState.activeKey} onChange={setActiveKey} style={{ background: 'transparent' }}>

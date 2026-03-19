@@ -13,21 +13,21 @@ interface TopBarProps {
 
 export const TopBar: React.FC<TopBarProps> = ({ player, onOpenExchange, onSync, onDownload }) => {
   const power = calculatePower(player);
-  
+
   const handleSettingsClick = () => {
     Dialog.show({
       title: '遊戲設定',
       content: (
         <div style={{ textAlign: 'center', padding: '10px 0', display: 'flex', flexDirection: 'column', gap: '15px' }}>
           <div>
-            <button 
+            <button
               onClick={() => {
                 Dialog.clear();
                 onSync();
               }}
-              style={{ 
-                background: 'linear-gradient(45deg, #00C853, #64DD17)', 
-                color: 'white', border: 'none', borderRadius: '8px', 
+              style={{
+                background: 'linear-gradient(45deg, #00C853, #64DD17)',
+                color: 'white', border: 'none', borderRadius: '8px',
                 padding: '12px 24px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', width: '100%',
                 boxShadow: '0 4px 10px rgba(100,221,23,0.3)'
               }}
@@ -39,14 +39,14 @@ export const TopBar: React.FC<TopBarProps> = ({ player, onOpenExchange, onSync, 
             </p>
           </div>
           <div style={{ borderTop: '1px solid #333', paddingTop: '15px' }}>
-            <button 
+            <button
               onClick={() => {
                 Dialog.clear();
                 onDownload();
               }}
-              style={{ 
-                background: 'linear-gradient(45deg, #1E88E5, #42A5F5)', 
-                color: 'white', border: 'none', borderRadius: '8px', 
+              style={{
+                background: 'linear-gradient(45deg, #1E88E5, #42A5F5)',
+                color: 'white', border: 'none', borderRadius: '8px',
                 padding: '12px 24px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', width: '100%',
                 boxShadow: '0 4px 10px rgba(30,136,229,0.3)'
               }}
@@ -67,14 +67,14 @@ export const TopBar: React.FC<TopBarProps> = ({ player, onOpenExchange, onSync, 
   return (
     <div style={{ padding: '12px 16px', background: 'rgba(10, 10, 25, 0.9)', borderBottom: '1px solid rgba(255, 215, 0, 0.25)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-        
+
         {/* Settings Gear */}
         <div style={{ marginRight: '12px' }}>
-          <button 
+          <button
             onClick={handleSettingsClick}
-            style={{ 
-              background: 'transparent', border: 'none', fontSize: '24px', 
-              cursor: 'pointer', display: 'flex', alignItems: 'center' 
+            style={{
+              background: 'transparent', border: 'none', fontSize: '24px',
+              cursor: 'pointer', display: 'flex', alignItems: 'center'
             }}
           >
             ⚙️
@@ -94,15 +94,15 @@ export const TopBar: React.FC<TopBarProps> = ({ player, onOpenExchange, onSync, 
               }}
             />
             <span style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '12px', fontWeight: 'bold', color: 'var(--text)' }}>
-              {Math.floor(player.exp)} / {player.expToNext}
+              <FormattedNumber value={player.exp} /> / <FormattedNumber value={player.expToNext} />
             </span>
           </div>
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', marginBottom: '4px' }}>
             <p style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', color: '#00E5FF' }}>💎 <FormattedNumber value={player.diamonds} /></p>
-            <button 
-              onClick={onOpenExchange} 
+            <button
+              onClick={onOpenExchange}
               style={{ background: '#00E5FF', color: '#000', border: 'none', borderRadius: '50%', width: '22px', height: '22px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 8px rgba(0, 229, 255, 0.4)' }}
             >
               +
