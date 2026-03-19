@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { GameState, Equipment } from '../types/game';
+import { getItemConfig } from '../utils/gameLogic';
 import { Card, Button, Dialog, Checkbox } from 'antd-mobile';
+import { FormattedNumber } from './FormattedNumber';
 
 interface InventoryScreenProps {
   gameState: GameState;
@@ -136,7 +138,8 @@ export const InventoryScreen: React.FC<InventoryScreenProps> = ({ gameState, onE
                       borderRadius: '3px',
                       padding: '1px 4px',
                     }}>
-                      {displayDiff > 0 ? `+${displayDiff}` : displayDiff}
+                      {displayDiff > 0 && '+'}
+                      <FormattedNumber value={displayDiff} />
                     </div>
                   )}
                   {isSameQuality && displayDiff === 0 && (
@@ -184,10 +187,10 @@ export const InventoryScreen: React.FC<InventoryScreenProps> = ({ gameState, onE
                 }}
               >
                 <div style={{ fontSize: '24px', marginBottom: '4px' }}>
-                  {item.id === 'upgrade_stone' ? '🔮' : '📦'}
+                  {getItemConfig(item.id).icon}
                 </div>
                 <div style={{ fontSize: '10px', textAlign: 'center', fontWeight: 'bold', color: item.id === 'upgrade_stone' ? '#FFD700' : 'white' }}>
-                  {item.name}
+                  {getItemConfig(item.id, item.name).name}
                 </div>
                 <div style={{
                   position: 'absolute',
@@ -198,7 +201,7 @@ export const InventoryScreen: React.FC<InventoryScreenProps> = ({ gameState, onE
                   color: 'var(--text)',
                   textShadow: '1px 1px 2px black'
                 }}>
-                  x{item.quantity}
+                  x<FormattedNumber value={item.quantity} />
                 </div>
               </div>
             ))}
@@ -247,7 +250,7 @@ export const InventoryScreen: React.FC<InventoryScreenProps> = ({ gameState, onE
         <Dialog
           visible={!!selectedEquipment}
           title={
-            <span style={{ 
+            <span style={{
               color: getBorderColor(selectedEquipment.rarity),
               textShadow: '0 0 10px ' + getBorderColor(selectedEquipment.rarity),
               fontWeight: 'bold',

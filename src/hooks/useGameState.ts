@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { GameState, Player, Equipment } from '../types/game';
-import { getExpToNextLevel, generateBoss, generateEquipment, getEquipmentValue, generateGachaEquipment, getSalvageStones, getEnhanceCost, calculateAutoEnhance, calculateBulkPetSlotUpgrade, getActivePetBonus, PET_CONFIGS, PET_UPGRADE_COSTS, getTotalStats } from '../utils/gameLogic';
+import { getExpToNextLevel, generateBoss, generateEquipment, getEquipmentValue, generateGachaEquipment, getSalvageStones, getEnhanceCost, calculateAutoEnhance, calculateBulkPetSlotUpgrade, getActivePetBonus, PET_CONFIGS, PET_UPGRADE_COSTS, getTotalStats, getItemConfig } from '../utils/gameLogic';
 
 const initialPlayer: Player = {
   level: 1,
@@ -557,28 +557,39 @@ export const useGameState = () => {
     
     for (let i = 0; i < times; i++) {
         currentPity++;
+        
+        const rand = Math.random() * 100; // 0 to 100
+        
+        let isFullSSR = false;
         let isFullSR = false;
+        let isSSRFrag = false;
+        let isSRFrag = false;
         
         if (currentPity >= 100) {
-          isFullSR = true;
-          currentPity = 0;
-        } else if (Math.random() < 0.01) {
-          isFullSR = true;
-          currentPity = 0;
+           // Guarantee full pet at 100 pity based on relative rates (0.05 vs 1.0)
+           const pityRand = Math.random() * 1.05;
+           if (pityRand < 0.05) isFullSSR = true;
+           else isFullSR = true;
+        } else {
+           if (rand < 0.05) isFullSSR = true;
+           else if (rand < 1.05) isFullSR = true;
+           else if (rand < 2.05) isSSRFrag = true;
+           else if (rand < 12.05) isSRFrag = true;
         }
         
-        if (isFullSR) {
-          const randomPet = PET_CONFIGS[Math.floor(Math.random() * PET_CONFIGS.length)];
-          drawnResults.push({ type: 'full', pet: randomPet });
+        if (isFullSSR || isFullSR) {
+           currentPity = 0; // Reset pity upon pulling any full pet
+           const rarityList = PET_CONFIGS.filter(p => p.rarity === (isFullSSR ? 'SSR' : 'SR'));
+           const randomPet = rarityList[Math.floor(Math.random() * rarityList.length)];
+           drawnResults.push({ type: 'full', pet: randomPet });
+        } else if (isSSRFrag || isSRFrag) {
+           const rarityList = PET_CONFIGS.filter(p => p.rarity === (isSSRFrag ? 'SSR' : 'SR'));
+           const randomPet = rarityList[Math.floor(Math.random() * rarityList.length)];
+           const amount = Math.floor(Math.random() * 9) + 2; // 2-10
+           drawnResults.push({ type: 'pet_fragment', pet: randomPet, amount });
         } else {
-          if (Math.random() < 0.4) {
-            const amount = Math.floor(Math.random() * 3) + 1; // 1-3
-            drawnResults.push({ type: 'upgrade_fragment', amount });
-          } else {
-            const randomPet = PET_CONFIGS[Math.floor(Math.random() * PET_CONFIGS.length)];
-            const amount = Math.floor(Math.random() * 9) + 2; // 2-10
-            drawnResults.push({ type: 'pet_fragment', pet: randomPet, amount });
-          }
+           const amount = Math.floor(Math.random() * 3) + 1; // 1-3
+           drawnResults.push({ type: 'upgrade_fragment', amount });
         }
     }
 
@@ -586,12 +597,13 @@ export const useGameState = () => {
       const newPets = { ...prev.player.pets };
       const newItems = [...prev.inventory.items];
       
-      const addOrUpdateItem = (id: string, name: string, quantity: number, type: 'consumable' | 'material') => {
+      const addOrUpdateItem = (id: string, quantity: number, type: 'consumable' | 'material', dynamicName?: string) => {
+        const itemConfig = getItemConfig(id, dynamicName);
         const idx = newItems.findIndex(i => i.id === id);
         if (idx >= 0) {
           newItems[idx] = { ...newItems[idx], quantity: newItems[idx].quantity + quantity };
         } else {
-          newItems.push({ id, name, type, quantity });
+          newItems.push({ id, name: itemConfig.name, type, quantity });
         }
       };
 
@@ -600,12 +612,12 @@ export const useGameState = () => {
            if (!newPets[res.pet.id]) {
              newPets[res.pet.id] = { configId: res.pet.id, level: 0, duplicates: 0 };
            } else {
-             addOrUpdateItem(`pet_fragment_${res.pet.id}`, `${res.pet.name}碎片`, 30, 'material');
+             addOrUpdateItem(`pet_fragment_${res.pet.id}`, 30, 'material', `${res.pet.name}碎片`);
            }
          } else if (res.type === 'upgrade_fragment') {
-           addOrUpdateItem('pet_upgrade_fragment', '寵物強化碎片', res.amount, 'material');
+           addOrUpdateItem('pet_upgrade_fragment', res.amount, 'material');
          } else if (res.type === 'pet_fragment') {
-           addOrUpdateItem(`pet_fragment_${res.pet.pet.id}`, `${res.pet.pet.name}碎片`, res.amount, 'material');
+           addOrUpdateItem(`pet_fragment_${res.pet.id}`, res.amount, 'material', `${res.pet.name}碎片`);
          }
       });
 
@@ -631,9 +643,9 @@ export const useGameState = () => {
 
     if (isBreakthrough) {
       const fragItem = gameState.inventory.items.find(i => i.id === 'pet_upgrade_fragment');
-      const owned = fragItem ? fragItem.quantity : 0;
-      if (owned < fragmentCost) {
-        return { success: false, message: `需要 ${fragmentCost} 個寵物強化碎片！` };
+      const ownedFragments = fragItem ? fragItem.quantity : 0;
+      if (ownedFragments < fragmentCost) {
+        return { success: false, message: `需要 ${fragmentCost} 顆寵物強化石！` };
       }
     }
 

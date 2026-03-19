@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { GameState, PetConfig } from '../types/game';
 import { PET_CONFIGS, PET_UPGRADE_COSTS, calculateBulkPetSlotUpgrade } from '../utils/gameLogic';
 import { FormattedNumber } from './FormattedNumber';
+import { getItemConfig } from '../utils/gameLogic';
 import { Card, Button, Toast, Dialog } from 'antd-mobile';
 
 interface PetScreenProps {
@@ -76,7 +77,12 @@ export const PetScreen: React.FC<PetScreenProps> = ({
             <h3 style={{ margin: '0 0 10px 0', color: '#FFD700' }}>👑 目前出戰</h3>
             {equippedConfig && equippedPet ? (
               <div>
-                <h4 style={{ margin: '0 0 5px 0', color: '#00E5FF', fontSize: '18px' }}>{equippedConfig.name} <span style={{ color: '#4CAF50', fontSize: '14px' }}>Lv.{equippedPet.level}</span></h4>
+                <h4 style={{ margin: '0 0 5px 0', color: '#FFF', fontSize: '18px' }}>
+                  <span style={{ color: equippedConfig.rarity === 'SSR' ? '#FFD700' : '#E040FB', marginRight: '5px' }}>
+                    {equippedConfig.rarity}
+                  </span>
+                  {equippedConfig.name} <span style={{ color: '#4CAF50', fontSize: '14px' }}>Lv.{equippedPet.level}</span>
+                </h4>
                 <p style={{ margin: 0, color: '#4CAF50', fontWeight: 'bold' }}>加成: {getEffectText(equippedConfig).split('+')[0]} +{Math.floor(equippedConfig.baseValue * 100 * (1 + equippedPet.level))}%</p>
                 <Button size="small" color="danger" style={{ marginTop: '10px' }} onClick={() => equipPet(null)}>卸下寵物</Button>
               </div>
@@ -98,7 +104,7 @@ export const PetScreen: React.FC<PetScreenProps> = ({
             <div style={{ display: 'flex', gap: '15px', fontSize: '12px', color: 'var(--muted)' }}>
               <span>消耗金幣: <span style={{ color: gameState.player.money >= slotGoldCost ? '#FFD700' : '#F44336' }}><FormattedNumber value={slotGoldCost} /></span></span>
               {isBreakthrough && (
-                <span>突破碎片: <span style={{ color: ownedUpgradeFragments >= slotFragmentCost ? '#00E5FF' : '#F44336' }}>{ownedUpgradeFragments} / {slotFragmentCost}</span></span>
+                <span>{getItemConfig('pet_upgrade_fragment').icon}{getItemConfig('pet_upgrade_fragment').name}: <span style={{ color: ownedUpgradeFragments >= slotFragmentCost ? '#00E5FF' : '#F44336' }}>{ownedUpgradeFragments} / {slotFragmentCost}</span></span>
               )}
             </div>
           </div>
@@ -130,6 +136,9 @@ export const PetScreen: React.FC<PetScreenProps> = ({
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div style={{ flex: 1 }}>
                     <h3 style={{ margin: '0 0 5px 0', color: '#FFF', fontSize: '15px' }}>
+                      <span style={{ color: config.rarity === 'SSR' ? '#FFD700' : '#E040FB', marginRight: '5px' }}>
+                        {config.rarity}
+                      </span>
                       {config.name} {isOwned && <span style={{ fontSize: '12px', color: '#4CAF50' }}>Lv.{level}</span>}
                     </h3>
                     <p style={{ margin: '0 0 5px 0', fontSize: '12px', color: 'var(--text)' }}>
@@ -209,16 +218,16 @@ export const PetScreen: React.FC<PetScreenProps> = ({
                       <div style={{ fontSize: '14px', marginTop: '5px' }}>Lv.{slotLevel} ➔ <span style={{ color: '#4CAF50' }}>Lv.{preview.newLevel}</span></div>
                     </div>
                     <div style={{ borderTop: '1px dashed #666', paddingTop: '10px' }}>
-                      <p style={{ margin: '5px 0', fontSize: '14px' }}>預計總消耗：</p>
-                      <p style={{ margin: '5px 0', color: '#FFD700', fontWeight: 'bold', fontSize: '16px' }}>🪙 <FormattedNumber value={preview.totalGoldSpent} /> 金錢</p>
-                      {preview.totalFragmentsSpent > 0 && <p style={{ margin: '5px 0', color: '#00E5FF', fontWeight: 'bold', fontSize: '16px' }}>🧩 {preview.totalFragmentsSpent} 突破碎片</p>}
+                      <p style={{ margin: '5px 0', fontSize: '14px', color: 'var(--text)' }}>預計總消耗：</p>
+                      <p style={{ margin: '5px 0', color: '#FFD700', fontWeight: 'bold', fontSize: '16px' }}>{getItemConfig('money').icon} <FormattedNumber value={preview.totalGoldSpent} /> {getItemConfig('money').name}</p>
+                      {preview.totalFragmentsSpent > 0 && <p style={{ margin: '5px 0', color: '#00E5FF', fontWeight: 'bold', fontSize: '16px' }}>{getItemConfig('pet_upgrade_fragment').icon} <FormattedNumber value={preview.totalFragmentsSpent} /> {getItemConfig('pet_upgrade_fragment').name}</p>}
                     </div>
                   </>
                 ) : (
-                   <div style={{ padding: '20px 0' }}>
-                     <p style={{ color: '#F44336', fontSize: '16px', fontWeight: 'bold' }}>無法進行一鍵升級！</p>
-                     <p style={{ color: 'var(--text)', fontSize: '14px', marginTop: '10px' }}>您的金幣或突破碎片不足以升至下一等級。</p>
-                   </div>
+                  <div style={{ padding: '20px 0' }}>
+                    <p style={{ color: '#F44336', fontSize: '16px', fontWeight: 'bold' }}>無法進行一鍵升級！</p>
+                    <p style={{ color: 'var(--text)', fontSize: '14px', marginTop: '10px' }}>您的金幣或寵物強化石不足以升至下一等級。</p>
+                  </div>
                 )}
               </div>
             )}

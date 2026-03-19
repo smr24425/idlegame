@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { GameState, Equipment } from '../types/game';
 import { Card, Button, Dialog } from 'antd-mobile';
 import { FormattedNumber } from './FormattedNumber';
+import { getItemConfig } from '../utils/gameLogic';
 
 interface GachaScreenProps {
   gameState: GameState;
@@ -64,11 +65,11 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
     <div style={{ padding: '20px', height: '100%', overflow: 'auto' }}>
       <Card title="裝備抽卡" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', boxShadow: 'var(--shadow)', color: 'var(--text)', textAlign: 'center' }}>
         <p style={{ fontSize: '18px', marginBottom: '20px', color: 'var(--accent)' }}>
-          目前金錢: 🪙 <FormattedNumber value={gameState.player.money} />
+          目前{getItemConfig('money').name}: {getItemConfig('money').icon} <FormattedNumber value={gameState.player.money} />
         </p>
 
         <p style={{ color: 'var(--muted)', fontSize: '14px', marginBottom: '20px' }}>
-          每次抽卡花費 100 金錢，獲得與當前等級相同的裝備！<br />
+          每次抽卡花費 100 {getItemConfig('money').name}，獲得與當前等級相同的裝備！<br />
           有機率出現強力的 <span style={{ color: '#ff4444', fontWeight: 'bold' }}>紅色裝備</span>！
         </p>
 
@@ -94,12 +95,12 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
 
       <Card title="寵物抽卡" style={{ marginTop: '15px', background: 'var(--card-bg)', border: '1px solid var(--card-border)', boxShadow: 'var(--shadow)', color: 'var(--text)', textAlign: 'center' }}>
         <p style={{ fontSize: '18px', marginBottom: '20px', color: '#00E5FF', fontWeight: 'bold' }}>
-          目前鑽石: 💎 <FormattedNumber value={gameState.player.diamonds} />
+          目前{getItemConfig('diamonds').name}: {getItemConfig('diamonds').icon} <FormattedNumber value={gameState.player.diamonds} />
         </p>
 
         <p style={{ color: 'var(--muted)', fontSize: '14px', marginBottom: '20px' }}>
-          每次抽取需要 100 鑽石，獲取強力的永久增益寵物！<br />
-          若抽到重複的寵物，將自動轉換為強化碎片。
+          每次抽取需要 100 {getItemConfig('diamonds').name}，獲取強力的永久增益寵物！<br />
+          有機率獲得專屬特定寵物碎片與通用的{getItemConfig('pet_upgrade_fragment').icon}{getItemConfig('pet_upgrade_fragment').name}。
         </p>
 
         <Button
@@ -173,19 +174,21 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
               let bgColor = 'rgba(0,0,0,0.3)';
 
               if (r.type === 'full') {
-                borderColor = '#FFD700';
-                textColor = '#FFD700';
-                name = r.pet.name;
+                const isSSR = r.pet.rarity === 'SSR';
+                borderColor = isSSR ? '#FFD700' : '#E040FB';
+                textColor = borderColor;
+                name = `${r.pet.rarity} ${r.pet.name}`;
                 desc = '完整寵物';
-                bgColor = 'rgba(255, 215, 0, 0.1)';
+                bgColor = isSSR ? 'rgba(255, 215, 0, 0.1)' : 'rgba(224, 64, 251, 0.1)';
               } else if (r.type === 'upgrade_fragment') {
                 borderColor = '#00E5FF';
                 textColor = '#00E5FF';
-                name = '強化碎';
+                name = `${getItemConfig('pet_upgrade_fragment').icon}${getItemConfig('pet_upgrade_fragment').name}`;
                 desc = `x${r.amount}`;
               } else {
-                borderColor = '#4CAF50';
-                textColor = '#4CAF50';
+                const isSSR = r.pet.rarity === 'SSR';
+                borderColor = isSSR ? '#FFD700' : '#E040FB';
+                textColor = borderColor;
                 name = r.pet.name.substring(0, 3) + '碎';
                 desc = `x${r.amount}`;
               }

@@ -3,6 +3,7 @@ import { ProgressBar, Card, Button, Dialog } from 'antd-mobile';
 import { useState } from 'react';
 import { getEnhanceCost, calculateAutoEnhance, getTotalStats } from '../utils/gameLogic';
 import { FormattedNumber } from './FormattedNumber';
+import { getItemConfig } from '../utils/gameLogic';
 
 interface CharacterScreenProps {
   player: Player;
@@ -369,7 +370,7 @@ export const CharacterScreen: React.FC<CharacterScreenProps> = ({ player, invent
                         裝備屬性加成: +{currentMult} ➔ <span style={{ color: '#FFD700' }}>+{nextMult}</span>
                       </p>
                       <p style={{ margin: '5px 0', fontSize: '14px' }}>
-                        升級花費: 🪙 {gold} 金錢 {stones > 0 ? `+ 🔮 ${stones} 強化石` : ''}
+                        升級消耗: {getItemConfig('money').icon} {gold} {getItemConfig('money').name} {stones > 0 ? `+ ${getItemConfig('upgrade_stone').icon} ${stones} ${getItemConfig('upgrade_stone').name}` : ''}
                       </p>
                       <Button
                         color="primary"
@@ -429,9 +430,9 @@ export const CharacterScreen: React.FC<CharacterScreenProps> = ({ player, invent
                           })}
                         </div>
                         <div style={{ borderTop: '1px dashed #666', paddingTop: '10px' }}>
-                          <p style={{ margin: '5px 0', fontSize: '14px' }}>預計總消耗：</p>
-                          <p style={{ margin: '5px 0', color: '#FFD700', fontWeight: 'bold', fontSize: '16px' }}>🪙 {preview.totalGoldSpent} 金錢</p>
-                          {preview.totalStonesSpent > 0 && <p style={{ margin: '5px 0', color: '#FF9800', fontWeight: 'bold', fontSize: '16px' }}>🔮 {preview.totalStonesSpent} 強化石</p>}
+                          <p style={{ margin: '5px 0', fontSize: '14px', color: 'var(--text)' }}>預計總消耗：</p>
+                          <p style={{ margin: '5px 0', color: '#FFD700', fontWeight: 'bold', fontSize: '16px' }}>{getItemConfig('money').icon} <FormattedNumber value={preview.totalGoldSpent} /> {getItemConfig('money').name}</p>
+                          {preview.totalStonesSpent > 0 && <p style={{ margin: '5px 0', color: '#FF9800', fontWeight: 'bold', fontSize: '16px' }}>{getItemConfig('upgrade_stone').icon} <FormattedNumber value={preview.totalStonesSpent} /> {getItemConfig('upgrade_stone').name}</p>}
                         </div>
                       </>
                     ) : (

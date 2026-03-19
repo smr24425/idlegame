@@ -1,4 +1,40 @@
-import { Player, Boss, Equipment, PetConfig, PetEffectType } from '../types/game';
+import { Player, Equipment, Boss, PetConfig, PetEffectType } from '../types/game';
+
+export interface ItemConfig {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+}
+
+export const BASE_ITEM_CONFIGS: Record<string, Omit<ItemConfig, 'id'>> = {
+  money: { name: '金幣', icon: '🪙', description: '基本的交易貨幣' },
+  diamonds: { name: '鑽石', icon: '💎', description: '珍貴的抽卡資源' },
+  upgrade_stone: { name: '強化石', icon: '🔮', description: '用於強化裝備的神祕石頭' },
+  pet_upgrade_fragment: { name: '寵物強化石', icon: '💠', description: '通用的寵物強化素材' },
+};
+
+export const getItemConfig = (id: string, fallbackName?: string): ItemConfig => {
+  if (BASE_ITEM_CONFIGS[id]) {
+    return { id, ...BASE_ITEM_CONFIGS[id] };
+  }
+  
+  if (id.startsWith('pet_fragment_')) {
+    return {
+      id,
+      name: fallbackName || '專屬碎片',
+      icon: '🧩',
+      description: '可用於解鎖或強化對應寵物'
+    };
+  }
+
+  return {
+    id,
+    name: fallbackName || '未知物品',
+    icon: '📦',
+    description: ''
+  };
+};
 
 export const PET_UPGRADE_COSTS = [1, 2, 4, 8, 16, 32];
 

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Player } from '../types/game';
 import { calculatePower } from '../utils/gameLogic';
 import { FormattedNumber } from './FormattedNumber';
+import { getItemConfig } from '../utils/gameLogic';
 import { Dialog, Toast } from 'antd-mobile';
 
 interface TopBarProps {
@@ -98,31 +99,50 @@ export const TopBar: React.FC<TopBarProps> = ({ player, onOpenExchange, onSync, 
             </span>
           </div>
         </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px', marginBottom: '4px' }}>
-            <p style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', color: '#00E5FF' }}>💎 <FormattedNumber value={player.diamonds} /></p>
-            <button
-              onClick={onOpenExchange}
-              style={{ background: '#00E5FF', color: '#000', border: 'none', borderRadius: '50%', width: '22px', height: '22px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 8px rgba(0, 229, 255, 0.4)' }}
-            >
-              +
-            </button>
-          </div>
-          <p style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', color: 'var(--accent)' }}>💰 <FormattedNumber value={player.money} /></p>
-          <p style={{
-            margin: 0,
-            fontSize: '16px',
-            fontWeight: 'bold',
-            background: 'linear-gradient(45deg, var(--accent), var(--accent2))',
-            backgroundClip: 'text',
-            WebkitBackgroundClip: 'text',
-            color: 'transparent',
-            textShadow: '0 0 10px rgba(255, 215, 0, 0.6)',
-            animation: 'pulse 2s infinite'
-          }}>
-            ⚡ 戰力值 <FormattedNumber value={power} />
+        {/* 資源 */}
+
+      </div>
+
+      <div style={{ flex: 1, display: 'flex', gap: '5px', alignItems: 'flex-end', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flex: 1, textAlign: 'center' }}>
+          <p style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: '#00E5FF' }}>
+            {getItemConfig('diamonds').icon} <FormattedNumber value={player.diamonds} />
           </p>
+          <button
+            onClick={onOpenExchange}
+            style={{
+              background: 'rgba(0, 229, 255, 0.2)',
+              border: '1px solid #00E5FF',
+              borderRadius: '50%',
+              color: '#00E5FF',
+              width: '20px',
+              height: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              padding: 0
+            }}
+          >
+            +
+          </button>
         </div>
+        <p style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: 'var(--accent)', flex: 1, textAlign: 'center' }}>{getItemConfig('money').icon} <FormattedNumber value={player.money} /></p>
+        <p style={{
+          margin: 0,
+          fontSize: '16px',
+          fontWeight: 'bold',
+          background: 'linear-gradient(45deg, var(--accent), var(--accent2))',
+          backgroundClip: 'text',
+          WebkitBackgroundClip: 'text',
+          color: 'transparent',
+          textShadow: '0 0 10px rgba(255, 215, 0, 0.6)',
+          animation: 'pulse 2s infinite', flex: 1,
+          textWrap: 'nowrap', textAlign: 'center'
+        }}>
+          ⚡戰力值 <FormattedNumber value={power} />
+        </p>
       </div>
     </div>
   );
