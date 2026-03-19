@@ -1,0 +1,784 @@
+import { useState, useEffect } from 'react';
+import { GameState, Player, Equipment } from '../types/game';
+import { getExpToNextLevel, generateBoss, generateEquipment, getEquipmentValue, generateGachaEquipment, getSalvageStones, getEnhanceCost, calculateAutoEnhance, calculateBulkPetSlotUpgrade, getActivePetBonus, PET_CONFIGS, PET_UPGRADE_COSTS, getTotalStats } from '../utils/gameLogic';
+
+const initialPlayer: Player = {
+  level: 1,
+  exp: 0,
+  expToNext: getExpToNextLevel(1),
+  money: 0,
+  diamonds: 0,
+  pets: {},
+  equippedPetId: null,
+  petSlotLevel: 1,
+  petGachaPity: 0,
+  stage: 1,
+  attributes: {
+    health: 1,
+    attack: 5,
+    critRate: 0.05,
+    critDamage: 0.1,
+    defense: 1,
+  },
+  availablePoints: 0,
+  health: 110, // base 100 + health * 10
+  maxHealth: 110,
+  equipment: {
+    weapon: null,
+    armor: null,
+    pants: null,
+    gloves: null,
+    ring: null,
+    necklace: null,
+  },
+  slotLevels: {
+    weapon: 0,
+    armor: 0,
+    pants: 0,
+    gloves: 0,
+    ring: 0,
+    necklace: 0,
+  },
+};
+
+export const useGameState = () => {
+  const [gameState, setGameState] = useState<GameState>(() => {
+    const saved = localStorage.getItem('idleGameState');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      parsed.player.expToNext = getExpToNextLevel(parsed.player.level);
+      parsed.player.maxHealth = 100 + (parsed.player.attributes?.health || 0) * 10;
+      parsed.player.health = Math.min(parsed.player.health, parsed.player.maxHealth);
+      // Ensure attributes exist
+      parsed.player.attributes = {
+        ...initialPlayer.attributes,
+        ...parsed.player.attributes,
+      };
+      // Ensure equipment exists
+      parsed.player.equipment = {
+        ...initialPlayer.equipment,
+        ...parsed.player.equipment,
+      };
+      // Ensure other fields
+      parsed.player.availablePoints = parsed.player.availablePoints || 0;
+      parsed.player.stage = parsed.player.stage || 1;
+      parsed.player.level = parsed.player.level || 1;
+      parsed.player.exp = parsed.player.exp || 0;
+      parsed.player.money = parsed.player.money || 0;
+      parsed.player.diamonds = parsed.player.diamonds || 0;
+      parsed.player.pets = parsed.player.pets || {};
+      if (parsed.player.equippedPetId === undefined) parsed.player.equippedPetId = null;
+      // Ensure inventory exists
+      parsed.inventory = {
+        equipment: parsed.inventory?.equipment || [],
+        items: parsed.inventory?.items || [],
+      };
+      parsed.player.slotLevels = {
+        ...initialPlayer.slotLevels,
+        ...parsed.player.slotLevels,
+      };
+      return parsed;
+    }
+    return {
+      player: initialPlayer,
+      currentBoss: null,
+      isFighting: false,
+      fightLog: [],
+      lastCollectTime: Date.now(),
+      inventory: {
+        equipment: [],
+        items: [],
+      },
+    };
+  });
+
+  useEffect(() => {
+    localStorage.setItem('idleGameState', JSON.stringify(gameState));
+  }, [gameState]);
+
+  const collectRewards = () => {
+    const now = Date.now();
+    const timeDiff = Math.floor((now - gameState.lastCollectTime) / 1000); // seconds
+    const goldBonus = getActivePetBonus(gameState.player, 'goldGain');
+    const expBonus = getActivePetBonus(gameState.player, 'expGain');
+    const dropRateBonus = getActivePetBonus(gameState.player, 'dropRate');
+
+    // 每秒獲得的經驗 / 金錢會根據當前關卡上升
+    const expGained = timeDiff * gameState.player.stage * 10 * (1 + expBonus); // per second
+    const moneyGained = timeDiff * gameState.player.stage * 5 * (1 + goldBonus);
+    // 每 60 秒掉一件裝備
+    const minutes = Math.floor(timeDiff / 60);
+    const equipments: Equipment[] = [];
+    for (let i = 0; i < minutes; i++) {
+      const eq = generateEquipment(gameState.player.stage, 1, dropRateBonus); // 100% chance per minute
+      if (eq) equipments.push(eq);
+    }
+    setGameState(prev => ({
+      ...prev,
+      player: {
+        ...prev.player,
+        exp: prev.player.exp + expGained,
+        money: prev.player.money + moneyGained,
+      },
+      lastCollectTime: now,
+      inventory: {
+        ...prev.inventory,
+        equipment: [...prev.inventory.equipment, ...equipments],
+      },
+    }));
+    return { expGained: Math.floor(expGained), moneyGained: Math.floor(moneyGained), timeDiff, equipments };
+  };
+
+  const levelUp = () => {
+    setGameState(prev => {
+      let newLevel = prev.player.level;
+      let newExp = prev.player.exp;
+      let newAvailablePoints = prev.player.availablePoints;
+
+      // Process potential multiple level-ups from overflow exp
+      while (newExp >= getExpToNextLevel(newLevel)) {
+        newExp -= getExpToNextLevel(newLevel);
+        newLevel += 1;
+        newAvailablePoints += 3;
+      }
+
+      const newExpToNext = getExpToNextLevel(newLevel);
+      const newPlayer = { ...prev.player, level: newLevel, exp: newExp, expToNext: newExpToNext, availablePoints: newAvailablePoints };
+      const totalStats = getTotalStats(newPlayer);
+      const newMaxHealth = totalStats.health;
+      return {
+        ...prev,
+        player: {
+          ...newPlayer,
+          maxHealth: newMaxHealth,
+          health: Math.min(prev.player.health, newMaxHealth), // keep current health if below max
+        },
+      };
+    });
+  };
+
+  const allocatePoint = (attr: keyof Player['attributes']) => {
+    setGameState(prev => {
+      if (prev.player.availablePoints <= 0) return prev;
+      const newAttributes = { ...prev.player.attributes };
+      if (attr === 'critRate' || attr === 'critDamage') {
+        // each point gives +0.01 (1%) to crit stats
+        newAttributes[attr] = parseFloat((newAttributes[attr] + 0.01).toFixed(2)) as number;
+      } else {
+        newAttributes[attr]++;
+      }
+      const tempPlayer = { ...prev.player, attributes: newAttributes };
+      const newMaxHealth = getTotalStats(tempPlayer).health;
+      return {
+        ...prev,
+        player: {
+          ...tempPlayer,
+          availablePoints: prev.player.availablePoints - 1,
+          maxHealth: newMaxHealth,
+          health: Math.min(prev.player.health, newMaxHealth),
+        },
+      };
+    });
+  };
+
+  const startFight = () => {
+    setGameState(prev => {
+      const totalMaxHealth = getTotalStats(prev.player).health;
+      
+      const boss = generateBoss(prev.player.stage);
+      
+      return {
+        ...prev,
+        player: {
+          ...prev.player,
+          health: totalMaxHealth, // 每次挑戰Boss前補滿血 (Real dynamic Max HP)
+        },
+        currentBoss: boss,
+        isFighting: true,
+        fightLog: [`Challenging ${boss.name}!`],
+      };
+    });
+  };
+
+  const endFight = (result: 'win' | 'lose', finalPlayerHealth: number) => {
+    setGameState(prev => {
+      if (!prev.currentBoss || !prev.isFighting) return prev;
+
+      const newLog = [...prev.fightLog];
+      if (result === 'win') {
+        newLog.push(`You defeated ${prev.currentBoss.name}!`);
+        newLog.push(`Advanced to stage ${prev.player.stage + 1}!`);
+        return {
+          ...prev,
+          player: {
+            ...prev.player,
+            stage: prev.player.stage + 1,
+            money: prev.player.money + prev.player.stage * 50, // Reward
+            exp: prev.player.exp + prev.player.stage * 20,
+            health: Math.max(0, finalPlayerHealth),
+          },
+          currentBoss: null,
+          isFighting: false,
+          fightLog: newLog,
+        };
+      }
+
+      newLog.push(`You were defeated by ${prev.currentBoss.name}.`);
+      return {
+        ...prev,
+        player: {
+          ...prev.player,
+          health: Math.max(0, finalPlayerHealth),
+        },
+        currentBoss: null,
+        isFighting: false,
+        fightLog: newLog,
+      };
+    });
+  };
+
+  // Auto level up check
+  useEffect(() => {
+    if (gameState.player.exp >= gameState.player.expToNext) {
+      levelUp();
+    }
+  }, [gameState.player.exp]);
+
+  const equipItem = (equipment: Equipment) => {
+    setGameState(prev => {
+      const newEquipment = { ...prev.player.equipment };
+      const oldItem = newEquipment[equipment.type];
+      newEquipment[equipment.type] = equipment;
+      // Remove from inventory and add old item back if exists
+      let newInv = prev.inventory.equipment.filter(e => e.id !== equipment.id);
+      if (oldItem) {
+        newInv = [...newInv, oldItem];
+      }
+      return {
+        ...prev,
+        player: {
+          ...prev.player,
+          equipment: newEquipment,
+        },
+        inventory: {
+          ...prev.inventory,
+          equipment: newInv,
+        },
+      };
+    });
+  };
+
+  const unequipItem = (type: keyof Player['equipment']) => {
+    setGameState(prev => {
+      const item = prev.player.equipment[type];
+      if (item) {
+        const newEquipment = { ...prev.player.equipment };
+        newEquipment[type] = null;
+        return {
+          ...prev,
+          player: {
+            ...prev.player,
+            equipment: newEquipment,
+          },
+          inventory: {
+            ...prev.inventory,
+            equipment: [...prev.inventory.equipment, item],
+          },
+        };
+      }
+      return prev;
+    });
+  };
+
+  const sellItem = (equipmentId: string): number => {
+    let gainedGold = 0;
+    setGameState(prev => {
+      const item = prev.inventory.equipment.find(e => e.id === equipmentId);
+      if (!item) return prev;
+      gainedGold = getEquipmentValue(item);
+      const gainedStones = getSalvageStones(item);
+      
+      let newItems = [...prev.inventory.items];
+      if (gainedStones > 0) {
+        const stoneIndex = newItems.findIndex(i => i.id === 'upgrade_stone');
+        if (stoneIndex >= 0) {
+          newItems[stoneIndex] = { ...newItems[stoneIndex], quantity: newItems[stoneIndex].quantity + gainedStones };
+        } else {
+          newItems.push({ id: 'upgrade_stone', name: '裝備強化石', type: 'material', quantity: gainedStones });
+        }
+      }
+
+      return {
+        ...prev,
+        player: {
+          ...prev.player,
+          money: prev.player.money + gainedGold,
+        },
+        inventory: {
+          ...prev.inventory,
+          equipment: prev.inventory.equipment.filter(e => e.id !== equipmentId),
+          items: newItems,
+        },
+      };
+    });
+    return gainedGold;
+  };
+
+  const sellItemsByFilter = (filters: number[]) => {
+    setGameState(prev => {
+      const toSell = prev.inventory.equipment.filter(eq => {
+        const rarityIndex = ['white', 'green', 'blue', 'purple', 'gold'].indexOf(eq.rarity);
+        const isRarityMatch = filters.some(f => f >= 1 && f <= 5 && rarityIndex === f - 1);
+        const equipped = prev.player.equipment[eq.type];
+        const eqPower =
+          (eq.stats.attack || 0) +
+          (eq.stats.defense || 0) +
+          (eq.stats.health || 0) +
+          (eq.stats.critRate || 0) * 100 +
+          (eq.stats.critDamage || 0) * 100;
+        const equippedPower = equipped
+          ? (equipped.stats.attack || 0) +
+            (equipped.stats.defense || 0) +
+            (equipped.stats.health || 0) +
+            (equipped.stats.critRate || 0) * 100 +
+            (equipped.stats.critDamage || 0) * 100
+          : 0;
+        const isLowerOrEqualPower = filters.includes(6) && eqPower <= equippedPower;
+        return isRarityMatch || isLowerOrEqualPower;
+      });
+
+      const totalGainGold = toSell.reduce((sum, item) => sum + getEquipmentValue(item), 0);
+      const totalGainStones = toSell.reduce((sum, item) => sum + getSalvageStones(item), 0);
+
+      let newItems = [...prev.inventory.items];
+      if (totalGainStones > 0) {
+        const stoneIndex = newItems.findIndex(i => i.id === 'upgrade_stone');
+        if (stoneIndex >= 0) {
+          newItems[stoneIndex] = { ...newItems[stoneIndex], quantity: newItems[stoneIndex].quantity + totalGainStones };
+        } else {
+          newItems.push({ id: 'upgrade_stone', name: '裝備強化石', type: 'material', quantity: totalGainStones });
+        }
+      }
+
+      return {
+        ...prev,
+        player: {
+          ...prev.player,
+          money: prev.player.money + totalGainGold,
+        },
+        inventory: {
+          ...prev.inventory,
+          equipment: prev.inventory.equipment.filter(eq => !toSell.includes(eq)),
+          items: newItems,
+        },
+      };
+    });
+  };
+
+  const addEquipmentToInventory = (equipment: Equipment) => {
+    setGameState(prev => ({
+      ...prev,
+      inventory: {
+        ...prev.inventory,
+        equipment: [...prev.inventory.equipment, equipment],
+      },
+    }));
+  };
+
+  const autoEquipBest = () => {
+    setGameState(prev => {
+      const slots: Equipment['type'][] = ['weapon', 'armor', 'pants', 'gloves', 'ring', 'necklace'];
+      const newEquipment = { ...prev.player.equipment };
+      let newInventory = [...prev.inventory.equipment];
+
+      slots.forEach(slot => {
+        const currentlyEquipped = newEquipment[slot];
+        const candidates = newInventory.filter(eq => eq.type === slot);
+        const allCandidates = currentlyEquipped ? [...candidates, currentlyEquipped] : candidates;
+        if (allCandidates.length === 0) return;
+
+        const best = allCandidates.reduce((bestSoFar, current) => {
+          return getEquipmentValue(current) > getEquipmentValue(bestSoFar) ? current : bestSoFar;
+        }, allCandidates[0]);
+
+        // If the best is already equipped, nothing changes
+        if (currentlyEquipped && best.id === currentlyEquipped.id) return;
+
+        // Equip the best item (if it was in inventory) and return the old equipment back to inventory
+        newInventory = newInventory.filter(eq => eq.id !== best.id);
+        if (currentlyEquipped) {
+          newInventory.push(currentlyEquipped);
+        }
+        newEquipment[slot] = best;
+      });
+
+      return {
+        ...prev,
+        player: {
+          ...prev.player,
+          equipment: newEquipment,
+        },
+        inventory: {
+          ...prev.inventory,
+          equipment: newInventory,
+        },
+      };
+    });
+  };
+
+  const updatePlayerHealth = (health: number) => {
+    setGameState(prev => ({
+      ...prev,
+      player: {
+        ...prev.player,
+        health: Math.max(0, health),
+      },
+    }));
+  };
+
+  const drawGacha = (times: number): { success: boolean, equipments: Equipment[] } => {
+    const cost = times * 100;
+    if (gameState.player.money < cost) {
+      return { success: false, equipments: [] };
+    }
+
+    const newEquipments: Equipment[] = [];
+    for (let i = 0; i < times; i++) {
+      newEquipments.push(generateGachaEquipment(gameState.player.level));
+    }
+
+    setGameState(prev => ({
+      ...prev,
+      player: {
+        ...prev.player,
+        money: prev.player.money - cost,
+      },
+      inventory: {
+        ...prev.inventory,
+        equipment: [...prev.inventory.equipment, ...newEquipments],
+      },
+    }));
+
+    return { success: true, equipments: newEquipments };
+  };
+
+  const enhanceSlot = (slotType: Equipment['type']): { success: boolean, message?: string } => {
+    const currentLevel = gameState.player.slotLevels[slotType];
+    const { gold, stones } = getEnhanceCost(currentLevel);
+      
+    if (gameState.player.money < gold) {
+      return { success: false, message: '金錢不足' };
+    }
+      
+    let stoneIndex = gameState.inventory.items.findIndex(i => i.id === 'upgrade_stone');
+    const currentStones = stoneIndex >= 0 ? gameState.inventory.items[stoneIndex].quantity : 0;
+    
+    if (stones > 0 && currentStones < stones) {
+      return { success: false, message: `需要 ${stones} 個強化石` };
+    }
+
+    setGameState(prev => {
+      let newItems = [...prev.inventory.items];
+      if (stones > 0) {
+        const sIndex = newItems.findIndex(i => i.id === 'upgrade_stone');
+        if (sIndex >= 0) {
+          newItems[sIndex] = { ...newItems[sIndex], quantity: newItems[sIndex].quantity - stones };
+        }
+      }
+      return {
+        ...prev,
+        player: {
+          ...prev.player,
+          money: prev.player.money - gold,
+          slotLevels: { ...prev.player.slotLevels, [slotType]: prev.player.slotLevels[slotType] + 1 }
+        },
+        inventory: { ...prev.inventory, items: newItems }
+      };
+    });
+    
+    return { success: true };
+  };
+
+  const applyAutoEnhance = () => {
+    let finalResult = false;
+    setGameState(prev => {
+      const stoneIndex = prev.inventory.items.findIndex(i => i.id === 'upgrade_stone');
+      const inventoryStones = stoneIndex >= 0 ? prev.inventory.items[stoneIndex].quantity : 0;
+      
+      const result = calculateAutoEnhance(prev.player, inventoryStones);
+      if (!result.canUpgradeAny) return prev;
+      
+      let newItems = [...prev.inventory.items];
+      if (result.totalStonesSpent > 0 && stoneIndex >= 0) {
+        newItems[stoneIndex] = { ...newItems[stoneIndex], quantity: newItems[stoneIndex].quantity - result.totalStonesSpent };
+      }
+
+      finalResult = true;
+      return {
+        ...prev,
+        player: {
+          ...prev.player,
+          money: prev.player.money - result.totalGoldSpent,
+          slotLevels: result.finalLevels,
+        },
+        inventory: {
+          ...prev.inventory,
+          items: newItems,
+        }
+      };
+    });
+    return finalResult;
+  };
+
+  const exchangeGoldForDiamonds = (amountToSpend: number) => {
+    setGameState(prev => {
+      if (prev.player.money < amountToSpend) return prev;
+      const diamondsGained = Math.floor(amountToSpend / 100);
+      if (diamondsGained <= 0) return prev;
+      return {
+        ...prev,
+        player: {
+          ...prev.player,
+          money: prev.player.money - diamondsGained * 100,
+          diamonds: prev.player.diamonds + diamondsGained,
+        }
+      };
+    });
+  };
+
+  const drawPetGacha = (times: number): { success: boolean; results: any[], message: string } => {
+    const cost = times * 100;
+    if (gameState.player.diamonds < cost) {
+      return { success: false, results: [], message: '鑽石不足！需 100 鑽石抽取一次。' };
+    }
+    
+    let currentPity = gameState.player.petGachaPity || 0;
+    const drawnResults: any[] = [];
+    
+    for (let i = 0; i < times; i++) {
+        currentPity++;
+        let isFullSR = false;
+        
+        if (currentPity >= 100) {
+          isFullSR = true;
+          currentPity = 0;
+        } else if (Math.random() < 0.01) {
+          isFullSR = true;
+          currentPity = 0;
+        }
+        
+        if (isFullSR) {
+          const randomPet = PET_CONFIGS[Math.floor(Math.random() * PET_CONFIGS.length)];
+          drawnResults.push({ type: 'full', pet: randomPet });
+        } else {
+          if (Math.random() < 0.4) {
+            const amount = Math.floor(Math.random() * 3) + 1; // 1-3
+            drawnResults.push({ type: 'upgrade_fragment', amount });
+          } else {
+            const randomPet = PET_CONFIGS[Math.floor(Math.random() * PET_CONFIGS.length)];
+            const amount = Math.floor(Math.random() * 9) + 2; // 2-10
+            drawnResults.push({ type: 'pet_fragment', pet: randomPet, amount });
+          }
+        }
+    }
+
+    setGameState(prev => {
+      const newPets = { ...prev.player.pets };
+      const newItems = [...prev.inventory.items];
+      
+      const addOrUpdateItem = (id: string, name: string, quantity: number, type: 'consumable' | 'material') => {
+        const idx = newItems.findIndex(i => i.id === id);
+        if (idx >= 0) {
+          newItems[idx] = { ...newItems[idx], quantity: newItems[idx].quantity + quantity };
+        } else {
+          newItems.push({ id, name, type, quantity });
+        }
+      };
+
+      drawnResults.forEach(res => {
+         if (res.type === 'full') {
+           if (!newPets[res.pet.id]) {
+             newPets[res.pet.id] = { configId: res.pet.id, level: 0, duplicates: 0 };
+           } else {
+             addOrUpdateItem(`pet_fragment_${res.pet.id}`, `${res.pet.name}碎片`, 30, 'material');
+           }
+         } else if (res.type === 'upgrade_fragment') {
+           addOrUpdateItem('pet_upgrade_fragment', '寵物強化碎片', res.amount, 'material');
+         } else if (res.type === 'pet_fragment') {
+           addOrUpdateItem(`pet_fragment_${res.pet.pet.id}`, `${res.pet.pet.name}碎片`, res.amount, 'material');
+         }
+      });
+
+      return {
+        ...prev,
+        player: { ...prev.player, diamonds: prev.player.diamonds - cost, petGachaPity: currentPity, pets: newPets },
+        inventory: { ...prev.inventory, items: newItems },
+      };
+    });
+
+    return { success: true, results: drawnResults, message: `成功抽出 ${times} 次！` };
+  };
+
+  const upgradePetSlot = (): { success: boolean; message: string } => {
+    const level = gameState.player.petSlotLevel || 1;
+    const goldCost = level * 1000;
+    const isBreakthrough = level % 10 === 0;
+    const fragmentCost = isBreakthrough ? Math.floor(level / 10) * 10 : 0;
+
+    if (gameState.player.money < goldCost) {
+      return { success: false, message: '金幣不足！' };
+    }
+
+    if (isBreakthrough) {
+      const fragItem = gameState.inventory.items.find(i => i.id === 'pet_upgrade_fragment');
+      const owned = fragItem ? fragItem.quantity : 0;
+      if (owned < fragmentCost) {
+        return { success: false, message: `需要 ${fragmentCost} 個寵物強化碎片！` };
+      }
+    }
+
+    setGameState(prev => {
+      let newItems = [...prev.inventory.items];
+      if (isBreakthrough) {
+        const fragIndex = newItems.findIndex(i => i.id === 'pet_upgrade_fragment');
+        newItems[fragIndex] = { ...newItems[fragIndex], quantity: newItems[fragIndex].quantity - fragmentCost };
+        if (newItems[fragIndex].quantity <= 0) newItems.splice(fragIndex, 1);
+      }
+      return {
+        ...prev,
+        player: { ...prev.player, money: prev.player.money - goldCost, petSlotLevel: level + 1 },
+        inventory: { ...prev.inventory, items: newItems }
+      };
+    });
+
+    return { success: true, message: '寵物欄位升級成功！' };
+  };
+
+  const bulkUpgradePetSlot = (): { success: boolean; message: string; levels: number } => {
+    let currentLevel = gameState.player.petSlotLevel || 1;
+    let currentMoney = gameState.player.money;
+    
+    const fragItem = gameState.inventory.items.find(i => i.id === 'pet_upgrade_fragment');
+    let currentFragments = fragItem ? fragItem.quantity : 0;
+    
+    const { levelsGained, totalGoldSpent, totalFragmentsSpent, newLevel } = calculateBulkPetSlotUpgrade(currentLevel, currentMoney, currentFragments);
+
+    if (levelsGained === 0) {
+      return { success: false, message: '資源不足，無法再升級！', levels: 0 };
+    }
+
+    setGameState(prev => {
+      let newItems = [...prev.inventory.items];
+      if (totalFragmentsSpent > 0) {
+        const fragIndex = newItems.findIndex(i => i.id === 'pet_upgrade_fragment');
+        if (fragIndex >= 0) {
+           newItems[fragIndex] = { ...newItems[fragIndex], quantity: newItems[fragIndex].quantity - totalFragmentsSpent };
+           if (newItems[fragIndex].quantity <= 0) newItems.splice(fragIndex, 1);
+        }
+      }
+      return {
+        ...prev,
+        player: { ...prev.player, money: prev.player.money - totalGoldSpent, petSlotLevel: newLevel },
+        inventory: { ...prev.inventory, items: newItems }
+      };
+    });
+
+    return { success: true, message: `成功一鍵升級 ${levelsGained} 級！`, levels: levelsGained };
+  };
+
+  const upgradePet = (configId: string): { success: boolean; message: string } => {
+    const isOwned = !!gameState.player.pets[configId];
+    const petLevel = isOwned ? gameState.player.pets[configId].level : -1;
+
+    if (petLevel >= PET_UPGRADE_COSTS.length) {
+      return { success: false, message: '已經達到最高等級！' };
+    }
+
+    const baseCost = petLevel === -1 ? 1 : PET_UPGRADE_COSTS[petLevel];
+    const fragmentCost = baseCost * 30;
+
+    const fragId = `pet_fragment_${configId}`;
+    const fragItem = gameState.inventory.items.find(i => i.id === fragId);
+    const ownedFragments = fragItem ? fragItem.quantity : 0;
+
+    if (ownedFragments < fragmentCost) {
+      return { success: false, message: `所需碎片不足！需要 ${fragmentCost} 個碎片 (目前擁有: ${ownedFragments})` };
+    }
+
+    setGameState(prev => {
+      let newItems = [...prev.inventory.items];
+      const fragItemIndex = newItems.findIndex(i => i.id === fragId);
+      if (fragItemIndex !== -1) {
+        newItems[fragItemIndex] = { ...newItems[fragItemIndex], quantity: newItems[fragItemIndex].quantity - fragmentCost };
+      }
+
+      const newPets = { ...prev.player.pets };
+      if (!isOwned) {
+        newPets[configId] = { configId, level: 0, duplicates: 0 };
+      } else {
+        newPets[configId] = { ...newPets[configId], level: newPets[configId].level + 1 };
+      }
+
+      return {
+        ...prev,
+        player: { ...prev.player, pets: newPets },
+        inventory: { ...prev.inventory, items: newItems }
+      };
+    });
+
+    return { success: true, message: isOwned ? '寵物升級成功！' : '寵物解鎖成功！' };
+  };
+
+  const equipPet = (configId: string | null) => {
+    setGameState(prev => ({
+      ...prev,
+      player: {
+        ...prev.player,
+        equippedPetId: configId,
+      }
+    }));
+  };
+
+  const loadCloudState = (state: GameState | null) => {
+    if (state) {
+      setGameState(state);
+    } else {
+      setGameState({
+        player: initialPlayer,
+        currentBoss: null,
+        isFighting: false,
+        fightLog: [],
+        lastCollectTime: Date.now(),
+        inventory: {
+          equipment: [],
+          items: [],
+        },
+      });
+    }
+  };
+
+  return {
+    gameState,
+    collectRewards,
+    allocatePoint,
+    startFight,
+    endFight,
+    equipItem,
+    unequipItem,
+    autoEquipBest,
+    addEquipmentToInventory,
+    sellItem,
+    sellItemsByFilter,
+    updatePlayerHealth,
+    drawGacha,
+    enhanceSlot,
+    applyAutoEnhance,
+    exchangeGoldForDiamonds,
+    drawPetGacha,
+    upgradePetSlot,
+    bulkUpgradePetSlot,
+    upgradePet,
+    equipPet,
+    loadCloudState
+  };
+};

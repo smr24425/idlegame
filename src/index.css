@@ -1,0 +1,88 @@
+:root {
+  --bg-gradient: radial-gradient(circle at top, #1a1a2e 0%, #0f101b 40%, #040410 100%);
+  --card-bg: rgba(20, 20, 35, 0.9);
+  --card-border: rgba(255, 215, 0, 0.35);
+  --text: #f0f0ff;
+  --muted: rgba(255, 255, 255, 0.75);
+  --accent: #ffd700;
+  --accent2: #00d1ff;
+  --button: linear-gradient(45deg, rgba(255, 215, 0, 0.9), rgba(255, 170, 0, 0.8));
+  --button-hover: linear-gradient(45deg, rgba(255, 230, 100, 0.95), rgba(255, 190, 0, 0.85));
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+
+  /* antd-mobile overrides */
+  --adm-color-primary: #ffd700;
+  --adm-color-success: #4CAF50;
+  --adm-color-warning: #ffb400;
+  --adm-color-danger: #ff4d4f;
+  --adm-color-background: #1a1a2e;
+  --adm-color-box-shadow: rgba(0, 0, 0, 0.5);
+  --adm-color-text: #f0f0ff;
+  --adm-color-weak: rgba(255, 255, 255, 0.5);
+  --adm-color-light: rgba(255, 255, 255, 0.1);
+  --adm-border-color: rgba(255, 215, 0, 0.2);
+  --adm-font-size-main: 16px;
+  --adm-dialog-border-radius: 12px;
+
+  --adm-color-text: #000;
+}
+
+.equipment-dialog-content {
+  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+  color: white;
+  padding: 15px;
+  border-radius: 10px;
+}
+
+.equipment-dialog-content ul {
+  list-style: none;
+  padding: 10px;
+  margin: 0;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+}
+
+.equipment-dialog-content li {
+  margin: 5px 0;
+  color: #4CAF50;
+  font-size: 14px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    'Roboto', 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji',
+    'Segoe UI Emoji';
+  background: var(--bg-gradient);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+a {
+  color: var(--accent);
+}
+
+button {
+  font-family: inherit;
+}
