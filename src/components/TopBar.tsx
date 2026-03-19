@@ -93,7 +93,7 @@ export const TopBar: React.FC<TopBarProps> = ({ player, onOpenExchange, onSync, 
                 transition: 'width 0.3s ease',
               }}
             />
-            <span style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '12px', fontWeight: 'bold', color: 'var(--text)' }}>
+            <span style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '12px', fontWeight: 'bold', color: 'var(--text)', textWrap: 'nowrap' }}>
               <FormattedNumber value={player.exp} /> / <FormattedNumber value={player.expToNext} />
             </span>
           </div>
