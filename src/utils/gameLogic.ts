@@ -486,7 +486,23 @@ export const generateEquipment = (stage: number, dropChance: number = 0.3, dropR
   const stats = { ...baseStats[type] };
   Object.keys(stats).forEach(key => {
     const k = key as keyof typeof stats;
-    stats[k] = Math.floor((stats[k] as number) * multiplier * (level / 10 + 1));
+    const val = (stats[k] as number) * multiplier * (level / 10 + 1);
+    if (k === 'critRate') {
+      let randAmt = 0;
+      switch (rarity) {
+        case 'white': randAmt = Math.random() * 0.01; break;
+        case 'green': randAmt = 0.01 + Math.random() * 0.01; break;
+        case 'blue': randAmt = 0.02 + Math.random() * 0.01; break;
+        case 'purple': randAmt = 0.03 + Math.random() * 0.01; break;
+        case 'gold': randAmt = 0.04 + Math.random() * 0.01; break;
+        case 'red': randAmt = 0.05; break;
+      }
+      stats[k] = parseFloat(randAmt.toFixed(4));
+    } else if (k === 'critDamage') {
+      stats[k] = parseFloat(val.toFixed(4));
+    } else {
+      stats[k] = Math.floor(val);
+    }
   });
 
   const typeNames = {
@@ -556,7 +572,23 @@ export const generateGachaEquipment = (playerLevel: number, highRarityBoost: num
   const stats = { ...baseStats[type] };
   Object.keys(stats).forEach(key => {
     const k = key as keyof typeof stats;
-    stats[k] = Math.floor((stats[k] as number) * multiplier * (level / 10 + 1));
+    const val = (stats[k] as number) * multiplier * (level / 10 + 1);
+    if (k === 'critRate') {
+      let randAmt = 0;
+      switch (rarity) {
+        case 'white': randAmt = Math.random() * 0.01; break;
+        case 'green': randAmt = 0.01 + Math.random() * 0.01; break;
+        case 'blue': randAmt = 0.02 + Math.random() * 0.01; break;
+        case 'purple': randAmt = 0.03 + Math.random() * 0.01; break;
+        case 'gold': randAmt = 0.04 + Math.random() * 0.01; break;
+        case 'red': randAmt = 0.05; break;
+      }
+      stats[k] = parseFloat(randAmt.toFixed(4));
+    } else if (k === 'critDamage') {
+      stats[k] = parseFloat(val.toFixed(4));
+    } else {
+      stats[k] = Math.floor(val);
+    }
   });
 
   const typeNames = {
