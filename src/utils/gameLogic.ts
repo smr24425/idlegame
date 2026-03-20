@@ -428,7 +428,7 @@ export const getBossHealth = (stage: number) => {
   }
 
   // 基礎線性部分
-  const baseLinear = 100 + stage * 80;
+  const baseLinear = 100 + stage * 20;
 
   // 每 100 關提升一個指數階層 (1.25倍)
   const exponent = Math.floor(stage / 100);
