@@ -107,9 +107,18 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
           size="large"
           color="primary"
           onClick={() => handleDraw(10)}
-          style={{ background: 'linear-gradient(45deg, #E91E63, #9C27B0)', border: 'none', fontWeight: 'bold', borderRadius: '8px' }}
+          style={{ marginBottom: '15px', background: 'linear-gradient(45deg, #E91E63, #9C27B0)', border: 'none', fontWeight: 'bold', borderRadius: '8px' }}
         >
           十連抽 ({getItemConfig('money').icon} 1000)
+        </Button>
+        <Button
+          block
+          size="large"
+          color="primary"
+          onClick={() => handleDraw(100)}
+          style={{ background: 'linear-gradient(45deg, #E91E63, #9C27B0)', border: 'none', fontWeight: 'bold', borderRadius: '8px' }}
+        >
+          百連抽 ({getItemConfig('money').icon} 10000)
         </Button>
       </Card>
 
@@ -197,7 +206,7 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
         actions={[
           {
             key: 'again',
-            text: lastDrawAmount === 10 ? '再次10連' : '再次單抽',
+            text: lastDrawAmount === 10 ? '再次十連' : lastDrawAmount === 100 ? '再次百連抽' : '再次單抽',
             onClick: () => handleDraw(lastDrawAmount),
             style: { color: '#FF9800', fontWeight: 'bold' }
           },
@@ -262,7 +271,7 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
         actions={[
           {
             key: 'again',
-            text: lastPetDrawAmount === 10 ? '再次10連' : '再次單抽',
+            text: lastPetDrawAmount === 10 ? '再次十連' : '再次單抽',
             onClick: () => handleDrawPet(lastPetDrawAmount),
             style: { color: '#00E5FF', fontWeight: 'bold' }
           },
@@ -318,7 +327,7 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
         actions={[
           {
             key: 'again',
-            text: lastArtifactDrawAmount === 10 ? '再次10連' : '再次單抽',
+            text: lastArtifactDrawAmount === 10 ? '再次十連' : '再次單抽',
             onClick: () => handleDrawArtifact(lastArtifactDrawAmount),
             style: { color: '#FF9800', fontWeight: 'bold' }
           },
