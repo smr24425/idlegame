@@ -346,7 +346,7 @@ export const getTotalStats = (player: Player) => {
   let totalAttack = rawTotalAttack + petAttackBuff + artifactPassiveAttackBuff + artifactAttack;
   let totalDefense = Math.floor((rawTotalDefense + petDefenseBuff + artifactPassiveDefenseBuff + artifactDefense + hpToDefenseBuff) * (1 + leadDefPercent));
   let totalHealth = Math.floor((rawTotalHealth + petHealthBuff + artifactPassiveHealthBuff + artifactHealth) * (1 + totalHealthMultiplier) * (1 - leadHpPercent));
-  
+
   const rebirths = player.rebirths || 0;
   const rebirthMultiplier = 1 + rebirths * 0.03;
 
@@ -421,8 +421,19 @@ export const getExpToNextLevel = (level: number): number => {
   }
 };
 
+export const getBossHealth = (stage: number) => {
+  // 基礎線性部分
+  const baseLinear = 100 + stage * 80;
+
+  // 每 100 關提升一個指數階層 (1.25倍)
+  const exponent = Math.floor(stage / 100);
+  const multiplier = Math.pow(1.25, exponent);
+
+  return Math.floor(baseLinear * multiplier);
+};
+
 export const generateBoss = (stage: number): Boss => {
-  const baseHealth = 100 + stage * 80;
+  const baseHealth = getBossHealth(stage);
   const baseAttack = 10 + stage * 9;
   const baseDefense = stage * 2;
   return {
@@ -443,13 +454,23 @@ const rarityMultipliers = {
   red: 5,
 };
 export const getEquipmentValue = (eq: Equipment): number => {
-  const base = (eq.stats.attack || 0) * 10
-    + (eq.stats.defense || 0) * 8
-    + (eq.stats.health || 0) * 2
-    + (eq.stats.critRate || 0) * 100
-    + (eq.stats.critDamage || 0) * 100;
-  const multiplier = rarityMultipliers[eq.rarity] || 1;
-  return Math.floor(base * multiplier);
+  // 1. 定義品階基礎價值 (對標抽卡成本 100)
+  const rarityBasePrice: Record<Equipment['rarity'], number> = {
+    white: 10,    // 10% 回本
+    green: 25,    // 25% 回本
+    blue: 60,     // 60% 回本
+    purple: 150,  // 150% 回本 (開始獲利)
+    gold: 800,    // 大幅獲利
+    red: 5000,    // 極稀有回饋
+  };
+
+  const base = rarityBasePrice[eq.rarity] || 10;
+
+  // 2. 加入微量等級權重 (每 10 等 +1 🪙)
+  // 這樣 100 等的紫裝會比 1 等的紫裝貴 10 塊，增加打寶成就感
+  const levelBonus = Math.floor(eq.level / 10);
+
+  return base + levelBonus;
 };
 export const generateEquipment = (stage: number, dropChance: number = 0.3, dropRateBonus: number = 0): Equipment | null => {
   // dropChance chance to drop equipment
