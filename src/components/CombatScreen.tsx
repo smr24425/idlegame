@@ -48,7 +48,7 @@ export const CombatScreen: React.FC<CombatScreenProps> = ({ gameState, onFightEn
       const stats = getTotalStats(gameState.player);
       const playerAttack = stats.attack;
       const playerDefense = stats.defense;
-      const playerCritRate = Math.min(0.6, stats.critRate);
+      const playerCritRate = Math.min(1, stats.critRate);
       const playerCritDamage = stats.critDamage;
 
       const bossAttack = gameState.currentBoss!.attack;
@@ -60,7 +60,7 @@ export const CombatScreen: React.FC<CombatScreenProps> = ({ gameState, onFightEn
       setBossHealth(bHealth);
 
       let turn = 0;
-      
+
       const activePetId = gameState.player.equippedPetId;
       const activePet = activePetId ? gameState.player.pets[activePetId] : null;
       const activePetConfig = activePet ? PET_CONFIGS.find(p => p.id === activePet.configId) : null;
@@ -82,7 +82,7 @@ export const CombatScreen: React.FC<CombatScreenProps> = ({ gameState, onFightEn
 
       while (pHealth > 0 && bHealth > 0) {
         if (isCancelled) return;
-        
+
         turn++;
         if (turn > 50) {
           newLogs.push('戰鬥回合超過 50 回合，判定失敗 (Time Out)！');
@@ -92,7 +92,7 @@ export const CombatScreen: React.FC<CombatScreenProps> = ({ gameState, onFightEn
           }, 300);
           return;
         }
-        
+
         if (activePetConfig?.combatSkill) {
           const skill = activePetConfig.combatSkill;
           if (skill.triggerCondition === 'boss' && (turn - 1) % skill.triggerTurn === 0) {
@@ -109,11 +109,11 @@ export const CombatScreen: React.FC<CombatScreenProps> = ({ gameState, onFightEn
 
         // Artifact turn-based regen
         if (artifactTurnRegen > 0 && turn % 5 === 0) {
-           const regenAmount = Math.floor(stats.health * artifactTurnRegen);
-           pHealth = Math.min(stats.health, pHealth + regenAmount);
-           setPlayerHealth(pHealth);
-           newLogs.push(`🩹 急救包發動：回復 ${regenAmount} 點生命！`);
-           setLogs([...newLogs]);
+          const regenAmount = Math.floor(stats.health * artifactTurnRegen);
+          pHealth = Math.min(stats.health, pHealth + regenAmount);
+          setPlayerHealth(pHealth);
+          newLogs.push(`🩹 急救包發動：回復 ${regenAmount} 點生命！`);
+          setLogs([...newLogs]);
         }
 
         // Dynamic HP Modifiers for Attack
@@ -124,14 +124,14 @@ export const CombatScreen: React.FC<CombatScreenProps> = ({ gameState, onFightEn
         // Player turn
         const isCrit = Math.random() < playerCritRate;
         const critMultiplier = isCrit ? 1.5 + playerCritDamage : 1;
-        
+
         // Medal of courage damage amplification against stronger bosses + HP Modifiers
         const isStrongerBoss = gameState.player.stage > gameState.player.level;
         const baseDamageMultiplier = critMultiplier * (1 + (isStrongerBoss ? artifactBossDmg : 0)) * dynamicAttackMultiplier;
-        
+
         let baseDamage = Math.max(1, Math.floor(playerAttack * 1000 / (1000 + bossDefense)));
         let playerDamage = Math.max(1, Math.floor(baseDamage * baseDamageMultiplier));
-        
+
         // Final Multipliers
         playerDamage = Math.floor(playerDamage * (1 + artifactFinalDamageMultiplier) * (1 + currentDodgeBoost));
         currentDodgeBoost = 0; // reset after swing
@@ -141,11 +141,11 @@ export const CombatScreen: React.FC<CombatScreenProps> = ({ gameState, onFightEn
         newLogs.push(`你造成 ${playerDamage} 傷害${isCrit ? '（暴擊）' : ''}！`);
 
         if (bHealth > 0 && Math.random() < artifactDoubleAttackChance) {
-           bHealth = Math.max(0, bHealth - playerDamage);
-           setBossHealth(bHealth);
-           newLogs.push(`⚔️ 【連擊殘影】連續攻擊！再次造成 ${playerDamage} 傷害！`);
+          bHealth = Math.max(0, bHealth - playerDamage);
+          setBossHealth(bHealth);
+          newLogs.push(`⚔️ 【連擊殘影】連續攻擊！再次造成 ${playerDamage} 傷害！`);
         }
-        
+
         setLogs([...newLogs]);
 
         if (bHealth <= 0) {
@@ -162,34 +162,34 @@ export const CombatScreen: React.FC<CombatScreenProps> = ({ gameState, onFightEn
 
         // Artifact Dodging
         if (Math.random() < artifactDodgeRate) {
-           if (artifactDodgeDamageBoost > 0) currentDodgeBoost = artifactDodgeDamageBoost;
-           newLogs.push(`💨 閃避！你閃過了 Boss 的攻擊！${artifactDodgeDamageBoost > 0 ? '(下一擊增傷!)' : ''}`);
-           setLogs([...newLogs]);
+          if (artifactDodgeDamageBoost > 0) currentDodgeBoost = artifactDodgeDamageBoost;
+          newLogs.push(`💨 閃避！你閃過了 Boss 的攻擊！${artifactDodgeDamageBoost > 0 ? '(下一擊增傷!)' : ''}`);
+          setLogs([...newLogs]);
         } else {
-           // Boss turn calculation
-           const currentDef = pHealth < stats.health * 0.25 ? playerDefense * (1 + artifactLowHpDef) : playerDefense;
-           const bossDamage = Math.max(1, Math.floor(bossAttack * 1000 / (1000 + currentDef)));
-           pHealth = Math.max(0, Math.floor(pHealth - bossDamage));
-           setPlayerHealth(pHealth);
-           newLogs.push(`Boss 造成 ${bossDamage} 傷害！`);
-           
-           if (artifactDamageReflect > 0) {
-              const reflectDamage = Math.max(1, Math.floor(bossDamage * artifactDamageReflect));
-              bHealth = Math.max(0, bHealth - reflectDamage);
-              setBossHealth(bHealth);
-              newLogs.push(`🪞 【復仇尖刺】反彈了 ${reflectDamage} 點傷害給 Boss！`);
-           }
-           
-           setLogs([...newLogs]);
-           
-           if (bHealth <= 0) {
-              newLogs.push('你贏了！(反傷擊殺)');
-              setLogs([...newLogs]);
-              setTimeout(() => {
-                if (!isCancelled) onFightEnd('win', Math.max(0, pHealth));
-              }, 300);
-              return;
-           }
+          // Boss turn calculation
+          const currentDef = pHealth < stats.health * 0.25 ? playerDefense * (1 + artifactLowHpDef) : playerDefense;
+          const bossDamage = Math.max(1, Math.floor(bossAttack * 1000 / (1000 + currentDef)));
+          pHealth = Math.max(0, Math.floor(pHealth - bossDamage));
+          setPlayerHealth(pHealth);
+          newLogs.push(`Boss 造成 ${bossDamage} 傷害！`);
+
+          if (artifactDamageReflect > 0) {
+            const reflectDamage = Math.max(1, Math.floor(bossDamage * artifactDamageReflect));
+            bHealth = Math.max(0, bHealth - reflectDamage);
+            setBossHealth(bHealth);
+            newLogs.push(`🪞 【復仇尖刺】反彈了 ${reflectDamage} 點傷害給 Boss！`);
+          }
+
+          setLogs([...newLogs]);
+
+          if (bHealth <= 0) {
+            newLogs.push('你贏了！(反傷擊殺)');
+            setLogs([...newLogs]);
+            setTimeout(() => {
+              if (!isCancelled) onFightEnd('win', Math.max(0, pHealth));
+            }, 300);
+            return;
+          }
         }
 
         if (pHealth <= 0) {
@@ -222,19 +222,19 @@ export const CombatScreen: React.FC<CombatScreenProps> = ({ gameState, onFightEn
       {/* Health Bars at Top */}
       <div style={{ padding: '14px', background: 'rgba(10, 10, 25, 0.9)', borderBottom: '1px solid rgba(255, 215, 0, 0.25)', position: 'relative' }}>
         {autoChallenge && (
-          <button 
+          <button
             onClick={() => setAutoChallenge(false)}
-            style={{ 
-              position: 'absolute', 
-              top: '12px', 
-              right: '14px', 
-              zIndex: 10, 
-              background: '#F44336', 
-              color: 'white', 
-              border: '1px solid #D32F2F', 
-              borderRadius: '20px', 
-              padding: '4px 12px', 
-              fontSize: '12px', 
+            style={{
+              position: 'absolute',
+              top: '12px',
+              right: '14px',
+              zIndex: 10,
+              background: '#F44336',
+              color: 'white',
+              border: '1px solid #D32F2F',
+              borderRadius: '20px',
+              padding: '4px 12px',
+              fontSize: '12px',
               fontWeight: 'bold',
               cursor: 'pointer',
               boxShadow: '0 2px 8px rgba(244, 67, 54, 0.4)'
