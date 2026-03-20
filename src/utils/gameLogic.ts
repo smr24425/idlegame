@@ -422,6 +422,11 @@ export const getExpToNextLevel = (level: number): number => {
 };
 
 export const getBossHealth = (stage: number) => {
+  //前10關必贏
+  if (stage <= 10) {
+    return 100;
+  }
+
   // 基礎線性部分
   const baseLinear = 100 + stage * 80;
 
