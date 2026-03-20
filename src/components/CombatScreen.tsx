@@ -48,7 +48,7 @@ export const CombatScreen: React.FC<CombatScreenProps> = ({ gameState, onFightEn
       const stats = getTotalStats(gameState.player);
       const playerAttack = stats.attack;
       const playerDefense = stats.defense;
-      const playerCritRate = Math.min(1, stats.critRate);
+      const playerCritRate = Math.min(0.6, stats.critRate);
       const playerCritDamage = stats.critDamage;
 
       const bossAttack = gameState.currentBoss!.attack;
@@ -84,6 +84,15 @@ export const CombatScreen: React.FC<CombatScreenProps> = ({ gameState, onFightEn
         if (isCancelled) return;
         
         turn++;
+        if (turn > 50) {
+          newLogs.push('戰鬥回合超過 50 回合，判定失敗 (Time Out)！');
+          setLogs([...newLogs]);
+          setTimeout(() => {
+            if (!isCancelled) onFightEnd('lose', Math.max(0, pHealth));
+          }, 300);
+          return;
+        }
+        
         if (activePetConfig?.combatSkill) {
           const skill = activePetConfig.combatSkill;
           if (skill.triggerCondition === 'boss' && (turn - 1) % skill.triggerTurn === 0) {
@@ -120,7 +129,7 @@ export const CombatScreen: React.FC<CombatScreenProps> = ({ gameState, onFightEn
         const isStrongerBoss = gameState.player.stage > gameState.player.level;
         const baseDamageMultiplier = critMultiplier * (1 + (isStrongerBoss ? artifactBossDmg : 0)) * dynamicAttackMultiplier;
         
-        let baseDamage = Math.max(1, playerAttack - bossDefense);
+        let baseDamage = Math.max(1, Math.floor(playerAttack * 1000 / (1000 + bossDefense)));
         let playerDamage = Math.max(1, Math.floor(baseDamage * baseDamageMultiplier));
         
         // Final Multipliers
@@ -159,7 +168,7 @@ export const CombatScreen: React.FC<CombatScreenProps> = ({ gameState, onFightEn
         } else {
            // Boss turn calculation
            const currentDef = pHealth < stats.health * 0.25 ? playerDefense * (1 + artifactLowHpDef) : playerDefense;
-           const bossDamage = Math.max(1, bossAttack - currentDef);
+           const bossDamage = Math.max(1, Math.floor(bossAttack * 1000 / (1000 + currentDef)));
            pHealth = Math.max(0, Math.floor(pHealth - bossDamage));
            setPlayerHealth(pHealth);
            newLogs.push(`Boss 造成 ${bossDamage} 傷害！`);

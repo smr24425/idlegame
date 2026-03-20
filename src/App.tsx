@@ -13,7 +13,8 @@ import { GachaScreen } from "./components/GachaScreen";
 import { PetScreen } from "./components/PetScreen";
 import { ArtifactScreen } from "./components/ArtifactScreen";
 import { AuthScreen } from "./components/AuthScreen";
-import { generateEquipment, getActivePetBonus } from "./utils/gameLogic";
+import { RebirthScreen } from "./components/RebirthScreen";
+import { generateEquipment, getActivePetBonus, getItemConfig } from "./utils/gameLogic";
 import { auth } from "./firebase";
 import { onAuthStateChanged, User, signOut } from "firebase/auth";
 import { uploadCloudSave, downloadCloudSave } from "./utils/cloudSync";
@@ -47,6 +48,11 @@ const tabs = [
     key: "artifacts",
     title: "神器",
     icon: "🏺",
+  },
+  {
+    key: "rebirth",
+    title: "重生",
+    icon: "🔥",
   },
 ];
 
@@ -89,7 +95,8 @@ function App() {
     upgradeArtifact,
     equipArtifact,
     unequipArtifact,
-    loadCloudState
+    loadCloudState,
+    doRebirth
   } = useGameState();
   const {
     uiState,
@@ -229,6 +236,16 @@ function App() {
             upgradeArtifact={upgradeArtifact}
             equipArtifact={equipArtifact}
             unequipArtifact={unequipArtifact}
+          />
+        );
+      case "rebirth":
+        return (
+          <RebirthScreen
+            gameState={gameState}
+            onRebirth={() => {
+              doRebirth();
+              setActiveKey('main');
+            }}
           />
         );
       default:
@@ -442,7 +459,7 @@ function App() {
                   style={{ width: '100px', background: 'rgba(255,255,255,0.1)', padding: '8px', borderRadius: '4px', border: '1px solid #666', color: 'white' }}
                 />
               </div>
-              <p style={{ marginTop: '10px', color: '#00E5FF', fontSize: '14px' }}>預計獲得: 💎 {Math.floor(parseInt(exchangeAmount || '0') / 100)}</p>
+              <p style={{ marginTop: '10px', color: '#00E5FF', fontSize: '14px' }}>預計獲得: {getItemConfig('diamonds').icon} {Math.floor(parseInt(exchangeAmount || '0') / 100)}</p>
             </div>
           }
           actions={[

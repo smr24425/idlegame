@@ -100,7 +100,7 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
           onClick={() => handleDraw(1)}
           style={{ marginBottom: '15px', background: 'linear-gradient(45deg, #FF9800, #FF5722)', border: 'none', fontWeight: 'bold', borderRadius: '8px' }}
         >
-          單抽 (100 金錢)
+          單抽 ({getItemConfig('money').icon} 100)
         </Button>
         <Button
           block
@@ -109,7 +109,7 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
           onClick={() => handleDraw(10)}
           style={{ background: 'linear-gradient(45deg, #E91E63, #9C27B0)', border: 'none', fontWeight: 'bold', borderRadius: '8px' }}
         >
-          十連抽 (1000 金錢)
+          十連抽 ({getItemConfig('money').icon} 1000)
         </Button>
       </Card>
 
@@ -130,7 +130,7 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
           onClick={() => handleDrawPet(1)}
           style={{ marginBottom: '15px', fontWeight: 'bold', borderRadius: '8px' }}
         >
-          單抽 (💎 100)
+          單抽 ({getItemConfig('diamonds').icon} 100)
         </Button>
         <Button
           block
@@ -139,7 +139,7 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
           onClick={() => handleDrawPet(10)}
           style={{ fontWeight: 'bold', borderRadius: '8px' }}
         >
-          十連抽 (💎 1000)
+          十連抽 ({getItemConfig('diamonds').icon} 1000)
         </Button>
       </Card>
 
@@ -160,16 +160,16 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
           onClick={() => handleDrawArtifact(1)}
           style={{ marginBottom: '15px', background: 'linear-gradient(45deg, #1E88E5, #42A5F5)', border: 'none', fontWeight: 'bold', borderRadius: '8px' }}
         >
-          單抽 (💎 100)
+          單抽 ({getItemConfig('diamonds').icon} 100)
         </Button>
         <Button
           block
           size="large"
           color="primary"
           onClick={() => handleDrawArtifact(10)}
-          style={{ background: 'linear-gradient(45deg, #FFB300, #FDD835)', color: 'black', border: 'none', fontWeight: 'bold', borderRadius: '8px' }}
+          style={{ background: 'linear-gradient(45deg, #FFB300, #FDD835)', color: '#fff', border: 'none', fontWeight: 'bold', borderRadius: '8px' }}
         >
-          十連抽 (💎 1000)
+          十連抽 ({getItemConfig('diamonds').icon} 1000)
         </Button>
       </Card>
 

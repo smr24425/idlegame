@@ -88,6 +88,7 @@ export interface Player {
   artifacts: Record<string, PlayerArtifact>;
   equippedArtifactIds: string[];
   stage: number;
+  rebirths?: number;
   attributes: {
     health: number; // 生命加成，影響最大生命
     attack: number; // 攻擊力

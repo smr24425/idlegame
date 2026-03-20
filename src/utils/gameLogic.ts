@@ -78,7 +78,7 @@ export const getItemConfig = (id: string, fallbackName?: string): ItemConfig => 
   if (BASE_ITEM_CONFIGS[id]) {
     return { id, ...BASE_ITEM_CONFIGS[id] };
   }
-  
+
   if (id.startsWith('pet_fragment_')) {
     return {
       id,
@@ -119,13 +119,13 @@ export const getActivePetBonus = (player: Player, effectType: PetEffectType): nu
   if (!pet) return 0;
   const config = PET_CONFIGS.find(c => c.id === pet.configId);
   if (!config) return 0;
-  
+
   if (config.effectType === 'dualResource' && (effectType === 'goldGain' || effectType === 'expGain')) {
     return config.baseValue * (1 + pet.level);
   }
-  
+
   if (config.effectType !== effectType) return 0;
-  
+
   return config.baseValue * (1 + pet.level);
 };
 
@@ -145,10 +145,10 @@ export const getEnhanceCost = (level: number, player: Player) => {
 
 export const getEnhancedStat = (eq: Equipment | null, slotLevel: number, statKey: keyof Equipment['stats'], player?: Player): number => {
   if (!eq || !eq.stats[statKey]) return 0;
-  
+
   const artifactBonus = player ? getArtifactEffectValue(player, 'enhanceSlotBonusIncrease') : 0;
   const multiplier = 1 + slotLevel * (0.05 + artifactBonus);
-  
+
   const baseStat = eq.stats[statKey]!;
   if (statKey === 'critRate' || statKey === 'critDamage') {
     return baseStat * multiplier; // Keep decimal for crit stats
@@ -170,18 +170,18 @@ export const calculateAutoEnhance = (player: Player, inventoryStones: number) =>
   while (true) {
     let minLevel = Infinity;
     let minSlot: typeof slots[number] | null = null;
-    
+
     for (const slot of slots) {
       if (slotLevels[slot] < minLevel) {
         minLevel = slotLevels[slot];
         minSlot = slot;
       }
     }
-    
+
     if (!minSlot) break;
-    
+
     const { gold, stones } = getEnhanceCost(slotLevels[minSlot], player);
-    
+
     if (remainingGold >= gold && remainingStones >= stones) {
       remainingGold -= gold;
       remainingStones -= stones;
@@ -240,10 +240,10 @@ export const calculateBulkPetSlotUpgrade = (currentLevel: number, currentMoney: 
     const goldCost = simLevel * 1000;
     const isBreakthrough = simLevel % 10 === 0;
     const fragmentCost = isBreakthrough ? Math.floor(simLevel / 10) * 10 : 0;
-    
+
     if (simMoney < goldCost) break;
     if (isBreakthrough && simFragments < fragmentCost) break;
-    
+
     simMoney -= goldCost;
     totalGoldSpent += goldCost;
     if (isBreakthrough) {
@@ -267,7 +267,7 @@ export const getGlobalPetPassiveStats = (player: Player) => {
 
     // Apply the Pokedex combat stat passive scaling unconditionally based on `passiveType`!
     const effectiveValue = config.passiveBaseValue * (1 + pet.level);
-    
+
     if (config.passiveType === 'healthPercentage') hpPercent += effectiveValue;
     else if (config.passiveType === 'attackPercentage') atkPercent += effectiveValue;
     else if (config.passiveType === 'defensePercentage') defPercent += effectiveValue;
@@ -299,9 +299,9 @@ export const getGlobalArtifactPassiveStats = (player: Player) => {
 };
 
 export const getTotalStats = (player: Player) => {
-  const baseAttack = player.attributes.attack;
-  const baseDefense = player.attributes.defense;
-  const baseHealth = 100 + player.attributes.health * 10;
+  const baseAttack = player.attributes.attack * 2;
+  const baseDefense = player.attributes.defense * 2;
+  const baseHealth = 100 + player.attributes.health * 20;
 
   const equipAttack = Object.entries(player.equipment).reduce((sum, [type, eq]) => sum + getEnhancedStat(eq, player.slotLevels[type as Equipment['type']], 'attack', player), 0);
   const equipDefense = Object.entries(player.equipment).reduce((sum, [type, eq]) => sum + getEnhancedStat(eq, player.slotLevels[type as Equipment['type']], 'defense', player), 0);
@@ -334,34 +334,49 @@ export const getTotalStats = (player: Player) => {
 
   const hpToDefenseBuff = Math.floor(rawTotalHealth * getArtifactEffectValue(player, 'hpToDefense'));
   const totalHealthMultiplier = getArtifactEffectValue(player, 'totalHealthMultiplier');
-  
+
   // 守財奴指環: goldToAttack (上限 Cap 是 baseValue, Rate is 1% per 1M)
   // Wait, user specified "這指的是人物屬性的攻擊最終加成 例如所有攻擊力都計算完畢後攻擊力為1000,那麼穿戴該神器會變為1200(最高Lv10 30%)"
   // Meaning the MAX CAP scales, and it's a multiplier to totalAttack. We apply this later to totalAttack.
-  
+
   // Artifact Multipliers
   const leadDefPercent = getArtifactEffectValue(player, 'defenseUpHealthDown'); // 5% per level def increase
   const leadHpPercent = leadDefPercent > 0 ? (0.02 * (leadDefPercent / 0.05)) : 0; // -2% per level hp decrease
 
   let totalAttack = rawTotalAttack + petAttackBuff + artifactPassiveAttackBuff + artifactAttack;
-  const totalDefense = Math.floor((rawTotalDefense + petDefenseBuff + artifactPassiveDefenseBuff + artifactDefense + hpToDefenseBuff) * (1 + leadDefPercent));
-  const totalHealth = Math.floor((rawTotalHealth + petHealthBuff + artifactPassiveHealthBuff + artifactHealth) * (1 + totalHealthMultiplier) * (1 - leadHpPercent));
+  let totalDefense = Math.floor((rawTotalDefense + petDefenseBuff + artifactPassiveDefenseBuff + artifactDefense + hpToDefenseBuff) * (1 + leadDefPercent));
+  let totalHealth = Math.floor((rawTotalHealth + petHealthBuff + artifactPassiveHealthBuff + artifactHealth) * (1 + totalHealthMultiplier) * (1 - leadHpPercent));
   
+  const rebirths = player.rebirths || 0;
+  const rebirthMultiplier = 1 + rebirths * 0.03;
+
+  const preRebirthAttack = totalAttack;
+  const preRebirthDefense = totalDefense;
+  const preRebirthHealth = totalHealth;
+
+  totalAttack = Math.floor(totalAttack * rebirthMultiplier);
+  totalDefense = Math.floor(totalDefense * rebirthMultiplier);
+  totalHealth = Math.floor(totalHealth * rebirthMultiplier);
+
+  const rebirthHealthBonus = totalHealth - preRebirthHealth;
+  const rebirthAttackBonus = totalAttack - preRebirthAttack;
+  const rebirthDefenseBonus = totalDefense - preRebirthDefense;
+
   const goldToAttackCap = getArtifactEffectValue(player, 'goldToAttack');
   if (goldToAttackCap > 0) {
-     const goldMultiplier = Math.min(goldToAttackCap, Math.floor(player.money / 1000000) * 0.01);
-     totalAttack += Math.floor(totalAttack * goldMultiplier);
+    const goldMultiplier = Math.min(goldToAttackCap, Math.floor(player.money / 1000000) * 0.01);
+    totalAttack += Math.floor(totalAttack * goldMultiplier);
   }
-  
+
   const artifactCritRate = getArtifactEffectValue(player, 'critRate');
   let artifactCritDmg = getArtifactEffectValue(player, 'critDamage');
-  
+
   if (totalAttack > totalDefense) {
     artifactCritDmg += getArtifactEffectValue(player, 'attackGreaterThanDefenseCritDmg');
   }
 
-  const totalCrit = player.attributes.critRate + equipCritRate + artifactCritRate;
-  const totalCritDmg = player.attributes.critDamage + equipCritDamage + artifactCritDmg;
+  const totalCrit = player.attributes.critRate + equipCritRate + artifactCritRate + (rebirths * 0.005);
+  const totalCritDmg = player.attributes.critDamage + equipCritDamage + artifactCritDmg + (rebirths * 0.01);
 
   return {
     health: Math.floor(totalHealth),
@@ -378,24 +393,38 @@ export const getTotalStats = (player: Player) => {
     petSlotHealth,
     petSlotAttack,
     petHealthBuff,
-    petAttackBuff,
-    petDefenseBuff
+    petDefenseBuff,
+
+    rebirthHealthBonus,
+    rebirthAttackBonus,
+    rebirthDefenseBonus,
+    rebirthCritRateBonus: rebirths * 0.005,
+    rebirthCritDamageBonus: rebirths * 0.01,
   };
 };
 
 export const calculatePower = (player: Player): number => {
   const stats = getTotalStats(player);
-  return Math.floor(stats.attack * 2 + stats.defense * 1.5 + stats.health * 0.2 + (stats.critRate * 100) + (stats.critDamage * 100));
+  const cappedCritRate = Math.min(0.6, stats.critRate);
+  return Math.floor((stats.attack * (1 + cappedCritRate * (0.5 + stats.critDamage))) + stats.health * 0.1 + stats.defense * 1.0);
 };
 
 export const getExpToNextLevel = (level: number): number => {
-  return level * 100;
+  if (level <= 500) {
+    return 1000 + (level - 1) * 500;
+  } else if (level <= 1500) {
+    const base500 = 1000 + (499) * 500;
+    return base500 + (level - 500) * 5000;
+  } else {
+    const base1500 = 251000 + (999) * 5000;
+    return base1500 + (level - 1500) * 50000;
+  }
 };
 
 export const generateBoss = (stage: number): Boss => {
-  const baseHealth = 50 + stage * 20;
-  const baseAttack = 5 + stage * 2;
-  const baseDefense = 2 + stage;
+  const baseHealth = 100 + stage * 80;
+  const baseAttack = 10 + stage * 9;
+  const baseDefense = stage * 2;
   return {
     name: `Boss of Stage ${stage}`,
     health: baseHealth,
@@ -494,13 +523,13 @@ export const generateGachaEquipment = (playerLevel: number, highRarityBoost: num
 
   const rarities: Equipment['rarity'][] = ['white', 'green', 'blue', 'purple', 'gold', 'red'];
   // Probabilities: White: 40%, Green: 35%, Blue: 15%, Purple: 8.9%, Gold: 1%, Red: 0.1%
-  const rarityWeights = [400, 350, 150, 89, 10, 1]; 
-  
+  const rarityWeights = [400, 350, 150, 89, 10, 1];
+
   if (highRarityBoost > 0) {
-      rarityWeights[4] *= (1 + highRarityBoost); // Gold
-      rarityWeights[5] *= (1 + highRarityBoost); // Red
+    rarityWeights[4] *= (1 + highRarityBoost); // Gold
+    rarityWeights[5] *= (1 + highRarityBoost); // Red
   }
-  
+
   const totalWeight = rarityWeights.reduce((a, b) => a + b, 0);
   let random = Math.random() * totalWeight;
   let rarityIndex = 0;

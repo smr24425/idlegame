@@ -40,13 +40,22 @@ export const CharacterScreen: React.FC<CharacterScreenProps> = ({ player, invent
 
     if (statKey === 'critRate' || statKey === 'critDamage') {
       const base = player.attributes[statKey];
-      const bonus = stats[statKey] - base;
+      const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+      // @ts-ignore
+      const rebirthVal = stats[`rebirth${capitalize(statKey)}Bonus`] || 0;
+      const bonus = stats[statKey] - base - rebirthVal;
       return (
         <span>
           {(stats[statKey] * 100).toFixed(1)}% (
           <span style={{ color: '#4CAF50', marginLeft: '5px' }}>基礎: {(base * 100).toFixed(1)}%</span>
           {' + '}
           <span style={{ color: '#00E5FF' }}>裝備/神器: {(bonus * 100).toFixed(1)}%</span>
+          {rebirthVal > 0 && (
+            <>
+              {' + '}
+              <span style={{ color: '#FF9800' }}>重生加成: +{(rebirthVal * 100).toFixed(1)}%</span>
+            </>
+          )}
           )
         </span>
       );
@@ -60,8 +69,10 @@ export const CharacterScreen: React.FC<CharacterScreenProps> = ({ player, invent
     const equipVal = stats[`equip${capKey}`] || 0;
     // @ts-ignore
     const petVal = (stats[`petSlot${capKey}`] || 0) + (stats[`pet${capKey}Buff`] || 0);
+    // @ts-ignore
+    const rebirthVal = stats[`rebirth${capKey}Bonus`] || 0;
 
-    const artifactVal = Math.max(0, stats[statKey] - (baseVal + equipVal + petVal));
+    const artifactVal = Math.max(0, stats[statKey] - (baseVal + equipVal + petVal + rebirthVal));
 
     return (
       <span>
@@ -73,6 +84,12 @@ export const CharacterScreen: React.FC<CharacterScreenProps> = ({ player, invent
         <span style={{ color: '#E040FB' }}>寵物: {Math.floor(petVal)}</span>
         {' + '}
         <span style={{ color: '#FFD700' }}>神器: {Math.floor(artifactVal)}</span>
+        {rebirthVal > 0 && (
+          <>
+            {' + '}
+            <span style={{ color: '#FF9800' }}>重生加成: {Math.floor(rebirthVal)}</span>
+          </>
+        )}
         )
       </span>
     );
@@ -452,8 +469,8 @@ export const CharacterScreen: React.FC<CharacterScreenProps> = ({ player, invent
                       <div style={{ textAlign: 'center', padding: '20px 0' }}>
                         <p style={{ color: '#F44336', fontSize: '16px', fontWeight: 'bold', marginBottom: '10px' }}>無法進行自動強化！</p>
                         <p style={{ margin: '5px 0', color: 'var(--text)', fontSize: '14px' }}>需要以下資源才能對最低等級的欄位進行一次升級：</p>
-                        {preview.missingGold > 0 && <p style={{ margin: '5px 0', color: '#FFD700', fontWeight: 'bold' }}>缺 🪙 {preview.missingGold} 金錢</p>}
-                        {preview.missingStones > 0 && <p style={{ margin: '5px 0', color: '#FF9800', fontWeight: 'bold' }}>缺 🔮 {preview.missingStones} 強化石</p>}
+                        {preview.missingGold > 0 && <p style={{ margin: '5px 0', color: '#FFD700', fontWeight: 'bold' }}>缺 {getItemConfig("money").icon} {preview.missingGold}</p>}
+                        {preview.missingStones > 0 && <p style={{ margin: '5px 0', color: '#FF9800', fontWeight: 'bold' }}>缺 {getItemConfig("upgrade_stone").icon} {preview.missingStones}</p>}
                       </div>
                     )}
                   </div>

@@ -104,7 +104,7 @@ export const TopBar: React.FC<TopBarProps> = ({ player, onOpenExchange, onSync, 
       </div>
 
       <div style={{ flex: 1, display: 'flex', gap: '5px', alignItems: 'flex-end', justifyContent: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flex: 1, textAlign: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flex: 1, justifyContent: "space-between", padding: '2px 4px', border: '1px solid rgba(255, 215, 0, 0.25)', borderRadius: '8px' }}>
           <p style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: '#00E5FF' }}>
             {getItemConfig('diamonds').icon} <FormattedNumber value={player.diamonds} />
           </p>
@@ -128,7 +128,7 @@ export const TopBar: React.FC<TopBarProps> = ({ player, onOpenExchange, onSync, 
             +
           </button>
         </div>
-        <p style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: 'var(--accent)', flex: 1, textAlign: 'center' }}>{getItemConfig('money').icon} <FormattedNumber value={player.money} /></p>
+        <div style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: 'var(--accent)', flex: 1, justifyContent: "space-between", padding: '2px 4px', border: '1px solid rgba(255, 215, 0, 0.25)', borderRadius: '8px' }}>{getItemConfig('money').icon} <FormattedNumber value={player.money} /></div>
         <p style={{
           margin: 0,
           fontSize: '16px',
@@ -139,7 +139,7 @@ export const TopBar: React.FC<TopBarProps> = ({ player, onOpenExchange, onSync, 
           color: 'transparent',
           textShadow: '0 0 10px rgba(255, 215, 0, 0.6)',
           animation: 'pulse 2s infinite', flex: 1,
-          textWrap: 'nowrap', textAlign: 'center'
+          textWrap: 'nowrap', textAlign: 'center', padding: '2px 4px', border: '1px solid rgba(255, 215, 0, 0.25)', borderRadius: '8px'
         }}>
           ⚡戰力值 <FormattedNumber value={power} />
         </p>
