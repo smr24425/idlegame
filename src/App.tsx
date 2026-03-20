@@ -11,6 +11,7 @@ import { InventoryScreen } from "./components/InventoryScreen";
 import { StartScreen } from "./components/StartScreen";
 import { GachaScreen } from "./components/GachaScreen";
 import { PetScreen } from "./components/PetScreen";
+import { ArtifactScreen } from "./components/ArtifactScreen";
 import { AuthScreen } from "./components/AuthScreen";
 import { generateEquipment, getActivePetBonus } from "./utils/gameLogic";
 import { auth } from "./firebase";
@@ -41,6 +42,11 @@ const tabs = [
     key: "pets",
     title: "寵物",
     icon: "🐾",
+  },
+  {
+    key: "artifacts",
+    title: "神器",
+    icon: "🏺",
   },
 ];
 
@@ -79,6 +85,10 @@ function App() {
     bulkUpgradePetSlot,
     upgradePet,
     equipPet,
+    drawArtifactGacha,
+    upgradeArtifact,
+    equipArtifact,
+    unequipArtifact,
     loadCloudState
   } = useGameState();
   const {
@@ -199,6 +209,7 @@ function App() {
             gameState={gameState}
             onDraw={drawGacha}
             onDrawPet={drawPetGacha}
+            onDrawArtifact={drawArtifactGacha}
           />
         );
       case "pets":
@@ -209,6 +220,15 @@ function App() {
             bulkUpgradePetSlot={bulkUpgradePetSlot}
             upgradePet={upgradePet}
             equipPet={equipPet}
+          />
+        );
+      case "artifacts":
+        return (
+          <ArtifactScreen
+            gameState={gameState}
+            upgradeArtifact={upgradeArtifact}
+            equipArtifact={equipArtifact}
+            unequipArtifact={unequipArtifact}
           />
         );
       default:

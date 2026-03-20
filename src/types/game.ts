@@ -26,6 +26,55 @@ export interface PlayerPet {
   duplicates: number;
 }
 
+export type ArtifactEffectType = 
+  | 'enhanceCostReduction' 
+  | 'baseAttack' 
+  | 'baseDefense' 
+  | 'baseHealth' 
+  | 'critDamage' 
+  | 'critRate' 
+  | 'expGain' 
+  | 'goldGain' 
+  | 'attackGreaterThanDefenseCritDmg' 
+  | 'upgradeStoneDropRate' 
+  | 'lowHealthDefense' 
+  | 'gachaCostReduction' 
+  | 'petStoneDropRate' 
+  | 'highLevelBossDamage' 
+  | 'turnHealthRegen' 
+  | 'defenseUpHealthDown' 
+  | 'dodgeRate'
+  | 'halfHealthAttackUp' 
+  | 'hpToDefense' 
+  | 'bossHighRarityDrop' 
+  | 'dodgeDamageBoost' 
+  | 'totalHealthMultiplier' 
+  | 'doubleAttackChance' 
+  | 'goldToAttack' 
+  | 'damageReflect' 
+  | 'finalDamageMultiplier' 
+  | 'gachaHighRarityBoost' 
+  | 'highHealthAttackUp' 
+  | 'enhanceSlotBonusIncrease';
+
+export interface ArtifactConfig {
+  id: string;
+  name: string;
+  effectType: ArtifactEffectType;
+  baseValue: number;
+  description: string;
+  rarity: 'R' | 'SR' | 'SSR';
+  passiveType?: 'attackPercentage' | 'healthPercentage' | 'defensePercentage';
+  passiveBaseValue?: number;
+  levelGrowth?: number;
+}
+
+export interface PlayerArtifact {
+  configId: string;
+  level: number;
+  fragments: number;
+}
+
 export interface Player {
   level: number;
   exp: number;
@@ -36,6 +85,8 @@ export interface Player {
   equippedPetId: string | null;
   petSlotLevel: number;
   petGachaPity: number;
+  artifacts: Record<string, PlayerArtifact>;
+  equippedArtifactIds: string[];
   stage: number;
   attributes: {
     health: number; // 生命加成，影響最大生命

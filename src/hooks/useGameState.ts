@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { GameState, Player, Equipment } from '../types/game';
-import { getExpToNextLevel, generateBoss, generateEquipment, getEquipmentValue, generateGachaEquipment, getSalvageStones, getEnhanceCost, calculateAutoEnhance, calculateBulkPetSlotUpgrade, getActivePetBonus, PET_CONFIGS, PET_UPGRADE_COSTS, getTotalStats, getItemConfig } from '../utils/gameLogic';
+import { getExpToNextLevel, generateBoss, generateEquipment, getEquipmentValue, generateGachaEquipment, getSalvageStones, getEnhanceCost, calculateAutoEnhance, calculateBulkPetSlotUpgrade, getActivePetBonus, PET_CONFIGS, PET_UPGRADE_COSTS, getTotalStats, getItemConfig, getArtifactEffectValue, ARTIFACT_CONFIGS, getArtifactUpgradeCost } from '../utils/gameLogic';
 
 const initialPlayer: Player = {
   level: 1,
@@ -12,6 +12,8 @@ const initialPlayer: Player = {
   equippedPetId: null,
   petSlotLevel: 1,
   petGachaPity: 0,
+  artifacts: {},
+  equippedArtifactIds: [],
   stage: 1,
   attributes: {
     health: 1,
@@ -48,6 +50,8 @@ export const useGameState = () => {
       const parsed = JSON.parse(saved);
       parsed.player.expToNext = getExpToNextLevel(parsed.player.level);
       parsed.player.maxHealth = 100 + (parsed.player.attributes?.health || 0) * 10;
+      parsed.player.artifacts = parsed.player.artifacts || {};
+      parsed.player.equippedArtifactIds = parsed.player.equippedArtifactIds || ['', '', ''];
       parsed.player.health = Math.min(parsed.player.health, parsed.player.maxHealth);
       // Ensure attributes exist
       parsed.player.attributes = {
@@ -103,29 +107,57 @@ export const useGameState = () => {
     const expBonus = getActivePetBonus(gameState.player, 'expGain');
     const dropRateBonus = getActivePetBonus(gameState.player, 'dropRate');
 
+    const artifactGoldBonus = getArtifactEffectValue(gameState.player, 'goldGain');
+    const artifactExpBonus = getArtifactEffectValue(gameState.player, 'expGain');
+    const artifactUpgradeDropRate = getArtifactEffectValue(gameState.player, 'upgradeStoneDropRate');
+    const artifactPetStoneDropRate = getArtifactEffectValue(gameState.player, 'petStoneDropRate');
+
     // 每秒獲得的經驗 / 金錢會根據當前關卡上升
-    const expGained = timeDiff * gameState.player.stage * 10 * (1 + expBonus); // per second
-    const moneyGained = timeDiff * gameState.player.stage * 5 * (1 + goldBonus);
+    const expGained = timeDiff * gameState.player.stage * 10 * (1 + expBonus + artifactExpBonus); // per second
+    const moneyGained = timeDiff * gameState.player.stage * 5 * (1 + goldBonus + artifactGoldBonus);
     // 每 60 秒掉一件裝備
     const minutes = Math.floor(timeDiff / 60);
     const equipments: Equipment[] = [];
+    
+    let upgradeStonesGained = 0;
+    let petStonesGained = 0;
+    
     for (let i = 0; i < minutes; i++) {
       const eq = generateEquipment(gameState.player.stage, 1, dropRateBonus); // 100% chance per minute
       if (eq) equipments.push(eq);
+      
+      // Chance to drop stones natively
+      if (Math.random() < 0.05 + artifactUpgradeDropRate) upgradeStonesGained++;
+      if (Math.random() < 0.02 + artifactPetStoneDropRate) petStonesGained++;
     }
-    setGameState(prev => ({
-      ...prev,
-      player: {
-        ...prev.player,
-        exp: prev.player.exp + expGained,
-        money: prev.player.money + moneyGained,
-      },
-      lastCollectTime: now,
-      inventory: {
-        ...prev.inventory,
-        equipment: [...prev.inventory.equipment, ...equipments],
-      },
-    }));
+
+    setGameState(prev => {
+      let newItems = [...prev.inventory.items];
+      const addMaterial = (id: string, name: string, quantity: number) => {
+        if (quantity <= 0) return;
+        const idx = newItems.findIndex(i => i.id === id);
+        if (idx >= 0) newItems[idx] = { ...newItems[idx], quantity: newItems[idx].quantity + quantity };
+        else newItems.push({ id, name, type: 'material', quantity });
+      };
+      
+      addMaterial('upgrade_stone', '裝備強化石', upgradeStonesGained);
+      addMaterial('pet_upgrade_fragment', '幼龍碎片', petStonesGained);
+
+      return {
+        ...prev,
+        player: {
+          ...prev.player,
+          exp: prev.player.exp + expGained,
+          money: prev.player.money + moneyGained,
+        },
+        lastCollectTime: now,
+        inventory: {
+          ...prev.inventory,
+          equipment: [...prev.inventory.equipment, ...equipments],
+          items: newItems,
+        },
+       };
+    });
     return { expGained: Math.floor(expGained), moneyGained: Math.floor(moneyGained), timeDiff, equipments };
   };
 
@@ -208,14 +240,32 @@ export const useGameState = () => {
       if (result === 'win') {
         newLog.push(`You defeated ${prev.currentBoss.name}!`);
         newLog.push(`Advanced to stage ${prev.player.stage + 1}!`);
+
+        const greedBoxChance = getArtifactEffectValue(prev.player, 'bossHighRarityDrop');
+        const extraEquipments: any[] = [];
+        if (greedBoxChance > 0 && Math.random() < greedBoxChance) {
+           const roll = Math.random() * 100;
+           let forcedRarity = 'Purple';
+           if (roll < 5) forcedRarity = 'Red';
+           else if (roll < 30) forcedRarity = 'Gold';
+           
+           const newEquip = generateEquipment(prev.player.level, forcedRarity as any);
+           extraEquipments.push(newEquip);
+           newLog.push(`🎁 【貪婪魔盒】掉落了稀有裝備！`);
+        }
+
         return {
           ...prev,
           player: {
             ...prev.player,
             stage: prev.player.stage + 1,
-            money: prev.player.money + prev.player.stage * 50, // Reward
-            exp: prev.player.exp + prev.player.stage * 20,
+            money: prev.player.money + prev.player.stage * 50 * (1 + getArtifactEffectValue(prev.player, 'goldGain')), // Reward
+            exp: prev.player.exp + prev.player.stage * 20 * (1 + getArtifactEffectValue(prev.player, 'expGain')),
             health: Math.max(0, finalPlayerHealth),
+          },
+          inventory: {
+            ...prev.inventory,
+            equipment: [...prev.inventory.equipment, ...extraEquipments]
           },
           currentBoss: null,
           isFighting: false,
@@ -426,14 +476,17 @@ export const useGameState = () => {
   };
 
   const drawGacha = (times: number): { success: boolean, equipments: Equipment[] } => {
-    const cost = times * 100;
+    const costReduction = getArtifactEffectValue(gameState.player, 'gachaCostReduction');
+    const highRarityBoost = getArtifactEffectValue(gameState.player, 'gachaHighRarityBoost');
+    
+    const cost = Math.floor(times * 100 * (1 - costReduction));
     if (gameState.player.money < cost) {
       return { success: false, equipments: [] };
     }
 
     const newEquipments: Equipment[] = [];
     for (let i = 0; i < times; i++) {
-      newEquipments.push(generateGachaEquipment(gameState.player.level));
+        newEquipments.push(generateGachaEquipment(gameState.player.level, highRarityBoost));
     }
 
     setGameState(prev => ({
@@ -453,7 +506,7 @@ export const useGameState = () => {
 
   const enhanceSlot = (slotType: Equipment['type']): { success: boolean, message?: string } => {
     const currentLevel = gameState.player.slotLevels[slotType];
-    const { gold, stones } = getEnhanceCost(currentLevel);
+    const { gold, stones } = getEnhanceCost(currentLevel, gameState.player);
       
     if (gameState.player.money < gold) {
       return { success: false, message: '金錢不足' };
@@ -740,6 +793,140 @@ export const useGameState = () => {
     }));
   };
 
+  const drawArtifactGacha = (times: number): { success: boolean; results: any[], message: string } => {
+    const cost = times * 100;
+    if (gameState.player.diamonds < cost) {
+      return { success: false, results: [], message: '鑽石不足！需 100 鑽石抽取一次。' };
+    }
+    
+    const drawnResults: any[] = [];
+    
+    for (let i = 0; i < times; i++) {
+        const rand = Math.random() * 100; // 0 to 100
+        
+        const isFull = rand < 1; // 1% chance for full Artifact
+        
+        const getRandomWeightedArtifact = () => {
+           let totalWeight = 0;
+           ARTIFACT_CONFIGS.forEach(c => totalWeight += (c.rarity === 'SR' ? 1 : 2));
+           let r = Math.random() * totalWeight;
+           for (let c of ARTIFACT_CONFIGS) {
+             const weight = c.rarity === 'SR' ? 1 : 2;
+             if (r < weight) return c;
+             r -= weight;
+           }
+           return ARTIFACT_CONFIGS[0];
+        };
+
+        const randomArtifact = getRandomWeightedArtifact();
+
+        if (isFull) {
+           drawnResults.push({ type: 'full', artifact: randomArtifact });
+        } else {
+           const amount = Math.floor(Math.random() * 9) + 2; // 2-10 fragments
+           drawnResults.push({ type: 'fragment', artifact: randomArtifact, amount });
+        }
+    }
+
+    setGameState(prev => {
+      const newArtifacts = { ...prev.player.artifacts };
+      
+      drawnResults.forEach(res => {
+         const artId = res.artifact.id;
+         if (!newArtifacts[artId]) {
+           newArtifacts[artId] = { configId: artId, level: 0, fragments: 0 };
+         }
+
+         if (res.type === 'full') {
+           if (newArtifacts[artId].level === 0) {
+             // Unlock if not owned
+             newArtifacts[artId].level = 1;
+           } else {
+             newArtifacts[artId].fragments += 40; // Convert duplicate full artifact to 40 fragments
+           }
+         } else if (res.type === 'fragment') {
+           newArtifacts[artId].fragments += res.amount;
+         }
+      });
+
+      return {
+        ...prev,
+        player: { ...prev.player, diamonds: prev.player.diamonds - cost, artifacts: newArtifacts }
+      };
+    });
+
+    return { success: true, results: drawnResults, message: `成功抽出 ${times} 次！` };
+  };
+
+  const upgradeArtifact = (configId: string): { success: boolean; message: string } => {
+    const artifact = gameState.player.artifacts[configId];
+    if (!artifact) return { success: false, message: '尚未獲取此神器！' };
+
+    const isUnlock = artifact.level === 0;
+    const currentTier = Math.max(1, artifact.level);
+    const fragmentCost = getArtifactUpgradeCost(currentTier);
+
+    if (fragmentCost === -1) {
+      return { success: false, message: '已經達到最高等級！' };
+    }
+
+    if (artifact.fragments < fragmentCost) {
+      return { success: false, message: `碎片不足！需要 ${fragmentCost} 個碎片 (目前擁有: ${artifact.fragments})` };
+    }
+
+    setGameState(prev => {
+      const newArtifacts = { ...prev.player.artifacts };
+      newArtifacts[configId] = {
+        ...newArtifacts[configId],
+        level: isUnlock ? 1 : newArtifacts[configId].level + 1,
+        fragments: newArtifacts[configId].fragments - fragmentCost,
+      };
+
+      return {
+        ...prev,
+        player: { ...prev.player, artifacts: newArtifacts }
+      };
+    });
+
+    return { success: true, message: isUnlock ? '神器解鎖成功！' : '神器進階成功！' };
+  };
+
+  const equipArtifact = (configId: string, slotIndex: number) => {
+    setGameState(prev => {
+      const newEquipped = [...prev.player.equippedArtifactIds];
+      const currentIndex = newEquipped.indexOf(configId);
+      
+      if (currentIndex !== -1) {
+        newEquipped[currentIndex] = ''; // Remove from previous slot if already equipped
+      }
+      
+      newEquipped[slotIndex] = configId;
+      
+      return {
+        ...prev,
+        player: {
+          ...prev.player,
+          equippedArtifactIds: newEquipped.filter(id => id !== ''), // Clean up empty slots later during stats if needed, or keep order
+        }
+      };
+    });
+  };
+
+  const unequipArtifact = (slotIndex: number) => {
+    setGameState(prev => {
+      const newEquipped = [...prev.player.equippedArtifactIds];
+      newEquipped.splice(slotIndex, 1);
+      
+      return {
+        ...prev,
+        player: {
+          ...prev.player,
+          equippedArtifactIds: newEquipped
+        }
+      };
+    });
+  };
+
   const loadCloudState = (state: GameState | null) => {
     if (state) {
       setGameState(state);
@@ -780,6 +967,10 @@ export const useGameState = () => {
     bulkUpgradePetSlot,
     upgradePet,
     equipPet,
+    drawArtifactGacha,
+    upgradeArtifact,
+    equipArtifact,
+    unequipArtifact,
     loadCloudState
   };
 };

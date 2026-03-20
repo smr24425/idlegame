@@ -1,9 +1,8 @@
 import { Player, Equipment } from '../types/game';
 import { ProgressBar, Card, Button, Dialog } from 'antd-mobile';
 import { useState } from 'react';
-import { getEnhanceCost, calculateAutoEnhance, getTotalStats } from '../utils/gameLogic';
+import { getEnhanceCost, calculateAutoEnhance, getTotalStats, getArtifactEffectValue, getActivePetBonus, getItemConfig } from '../utils/gameLogic';
 import { FormattedNumber } from './FormattedNumber';
-import { getItemConfig } from '../utils/gameLogic';
 
 interface CharacterScreenProps {
   player: Player;
@@ -47,7 +46,7 @@ export const CharacterScreen: React.FC<CharacterScreenProps> = ({ player, invent
           {(stats[statKey] * 100).toFixed(1)}% (
           <span style={{ color: '#4CAF50', marginLeft: '5px' }}>基礎: {(base * 100).toFixed(1)}%</span>
           {' + '}
-          <span style={{ color: '#00E5FF' }}>裝備: {(bonus * 100).toFixed(1)}%</span>
+          <span style={{ color: '#00E5FF' }}>裝備/神器: {(bonus * 100).toFixed(1)}%</span>
           )
         </span>
       );
@@ -62,6 +61,8 @@ export const CharacterScreen: React.FC<CharacterScreenProps> = ({ player, invent
     // @ts-ignore
     const petVal = (stats[`petSlot${capKey}`] || 0) + (stats[`pet${capKey}Buff`] || 0);
 
+    const artifactVal = Math.max(0, stats[statKey] - (baseVal + equipVal + petVal));
+
     return (
       <span>
         {Math.floor(stats[statKey])} (
@@ -69,7 +70,9 @@ export const CharacterScreen: React.FC<CharacterScreenProps> = ({ player, invent
         {' + '}
         <span style={{ color: '#00E5FF' }}>裝備: {Math.floor(equipVal)}</span>
         {' + '}
-        <span style={{ color: '#FFD700' }}>寵物: {Math.floor(petVal)}</span>
+        <span style={{ color: '#E040FB' }}>寵物: {Math.floor(petVal)}</span>
+        {' + '}
+        <span style={{ color: '#FFD700' }}>神器: {Math.floor(artifactVal)}</span>
         )
       </span>
     );
@@ -173,6 +176,16 @@ export const CharacterScreen: React.FC<CharacterScreenProps> = ({ player, invent
               <p style={{ margin: '8px 0', fontSize: '16px' }}>暴擊率: {formatStatDisplay('critRate')}</p>
               <p style={{ margin: '8px 0', fontSize: '16px' }}>暴擊傷害: {formatStatDisplay('critDamage')}</p>
               <p style={{ margin: '8px 0', fontSize: '16px' }}>防禦: {formatStatDisplay('defense')}</p>
+            </div>
+
+            <div style={{ background: 'rgba(0, 0, 0, 0.3)', padding: '15px', borderRadius: '10px', border: '1px solid rgba(0, 229, 255, 0.3)', marginTop: '15px' }}>
+              <h3 style={{ margin: '0 0 10px 0', color: '#00E5FF', textShadow: '0 0 5px rgba(0, 229, 255, 0.8)' }}>額外加成 (神器與寵物)</h3>
+              <p style={{ margin: '5px 0', fontSize: '14px' }}>閃避率: {(getArtifactEffectValue(player, 'dodgeRate') * 100).toFixed(1)}%</p>
+              <p style={{ margin: '5px 0', fontSize: '14px' }}>經驗加成: {((getArtifactEffectValue(player, 'expGain') + getActivePetBonus(player, 'expGain') + getActivePetBonus(player, 'dualResource')) * 100).toFixed(1)}%</p>
+              <p style={{ margin: '5px 0', fontSize: '14px' }}>金幣加成: {((getArtifactEffectValue(player, 'goldGain') + getActivePetBonus(player, 'goldGain') + getActivePetBonus(player, 'dualResource')) * 100).toFixed(1)}%</p>
+              <p style={{ margin: '5px 0', fontSize: '14px' }}>關卡裝備額外掉落: +{(getActivePetBonus(player, 'dropRate') * 100).toFixed(1)}%</p>
+              <p style={{ margin: '5px 0', fontSize: '14px' }}>掛機強化石 ({getItemConfig('upgrade_stone').icon}) 掉落機率: {(5 + getArtifactEffectValue(player, 'upgradeStoneDropRate') * 100).toFixed(1)}%</p>
+              <p style={{ margin: '5px 0', fontSize: '14px' }}>掛機幼龍碎片 ({getItemConfig('pet_upgrade_fragment').icon}) 掉落機率: {(2 + getArtifactEffectValue(player, 'petStoneDropRate') * 100).toFixed(1)}%</p>
             </div>
 
             <div style={{ marginTop: '15px' }}>
@@ -319,7 +332,7 @@ export const CharacterScreen: React.FC<CharacterScreenProps> = ({ player, invent
             if (!selectedSlot) return null;
             const eq = player.equipment[selectedSlot];
             const slotLevel = player.slotLevels[selectedSlot];
-            const { gold, stones } = getEnhanceCost(slotLevel);
+            const { gold, stones } = getEnhanceCost(slotLevel, player);
             const currentMult = (slotLevel * 5) + "%";
             const nextMult = ((slotLevel + 1) * 5) + "%";
 

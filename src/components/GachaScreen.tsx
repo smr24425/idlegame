@@ -8,9 +8,10 @@ interface GachaScreenProps {
   gameState: GameState;
   onDraw: (times: number) => { success: boolean; equipments: Equipment[] };
   onDrawPet: (times: number) => { success: boolean; results: any[], message: string };
+  onDrawArtifact: (times: number) => { success: boolean; results: any[], message: string };
 }
 
-export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onDrawPet }) => {
+export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onDrawPet, onDrawArtifact }) => {
   const [resultEquipments, setResultEquipments] = useState<Equipment[]>([]);
   const [dialogVisible, setDialogVisible] = useState(false);
   const [lastDrawAmount, setLastDrawAmount] = useState<number>(1);
@@ -18,6 +19,10 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
   const [resultPets, setResultPets] = useState<any[]>([]);
   const [petDialogVisible, setPetDialogVisible] = useState(false);
   const [lastPetDrawAmount, setLastPetDrawAmount] = useState<number>(1);
+
+  const [resultArtifacts, setResultArtifacts] = useState<any[]>([]);
+  const [artifactDialogVisible, setArtifactDialogVisible] = useState(false);
+  const [lastArtifactDrawAmount, setLastArtifactDrawAmount] = useState<number>(1);
 
   const handleDraw = (times: number) => {
     const result = onDraw(times);
@@ -47,6 +52,21 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
     setLastPetDrawAmount(times);
     setResultPets(res.results);
     setPetDialogVisible(true);
+  };
+
+  const handleDrawArtifact = (times: number) => {
+    const res = onDrawArtifact(times);
+    if (!res.success) {
+      Dialog.alert({
+        title: '鑽石不足',
+        content: `需要 ${times * 100} 鑽石才能抽取！`,
+        confirmText: '確定'
+      });
+      return;
+    }
+    setLastArtifactDrawAmount(times);
+    setResultArtifacts(res.results);
+    setArtifactDialogVisible(true);
   };
 
   const getBorderColor = (rarity: Equipment['rarity']) => {
@@ -118,6 +138,36 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
           color="warning"
           onClick={() => handleDrawPet(10)}
           style={{ fontWeight: 'bold', borderRadius: '8px' }}
+        >
+          十連抽 (💎 1000)
+        </Button>
+      </Card>
+
+      <Card title="神器抽卡" style={{ marginTop: '15px', background: 'var(--card-bg)', border: '1px solid var(--card-border)', boxShadow: 'var(--shadow)', color: 'var(--text)', textAlign: 'center' }}>
+        <p style={{ fontSize: '18px', marginBottom: '20px', color: '#00E5FF', fontWeight: 'bold' }}>
+          目前{getItemConfig('diamonds').name}: {getItemConfig('diamonds').icon} <FormattedNumber value={gameState.player.diamonds} />
+        </p>
+
+        <p style={{ color: 'var(--muted)', fontSize: '14px', marginBottom: '20px' }}>
+          每抽取一次花費 100 {getItemConfig('diamonds').name}。<br />
+          有機率獲得完整神器（1%）或神器碎片，40 片可解鎖對應的神器！
+        </p>
+
+        <Button
+          block
+          size="large"
+          color="primary"
+          onClick={() => handleDrawArtifact(1)}
+          style={{ marginBottom: '15px', background: 'linear-gradient(45deg, #1E88E5, #42A5F5)', border: 'none', fontWeight: 'bold', borderRadius: '8px' }}
+        >
+          單抽 (💎 100)
+        </Button>
+        <Button
+          block
+          size="large"
+          color="primary"
+          onClick={() => handleDrawArtifact(10)}
+          style={{ background: 'linear-gradient(45deg, #FFB300, #FDD835)', color: 'black', border: 'none', fontWeight: 'bold', borderRadius: '8px' }}
         >
           十連抽 (💎 1000)
         </Button>
@@ -224,6 +274,63 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
           }
         ]}
       />
+
+      <Dialog
+        visible={artifactDialogVisible}
+        title="抽卡結果"
+        onClose={() => setArtifactDialogVisible(false)}
+        content={
+          <div style={{ maxHeight: '300px', overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: '10px' }}>
+            {resultArtifacts.map((r, idx) => {
+              let borderColor = r.artifact.rarity === 'SSR' ? '#FFD700' : (r.artifact.rarity === 'SR' ? '#E040FB' : '#4CAF50');
+              let textColor = borderColor;
+              let name = '';
+              let desc = '';
+              let bgColor = 'rgba(0,0,0,0.3)';
+              let isFull = false;
+
+              if (r.type === 'full') {
+                isFull = true;
+                name = `🏺 ${r.artifact.name}`;
+                desc = '完整神器';
+                bgColor = `rgba(${r.artifact.rarity === 'SSR' ? '255,215,0' : (r.artifact.rarity === 'SR' ? '224,64,251' : '76,175,80')}, 0.1)`;
+              } else {
+                name = `${r.artifact.name}碎片`;
+                desc = `x${r.amount}`;
+              }
+
+              return (
+                <div key={idx} style={{
+                  border: `2px solid ${borderColor}`,
+                  borderRadius: '8px',
+                  padding: '5px',
+                  textAlign: 'center',
+                  background: bgColor,
+                  boxShadow: isFull ? `0 0 10px ${borderColor}` : 'none'
+                }}>
+                  <div style={{ fontSize: '10px', color: textColor, fontWeight: 'bold' }}>{name}</div>
+                  <div style={{ fontSize: '10px', color: 'var(--muted)' }}>{desc}</div>
+                </div>
+              );
+            })}
+          </div>
+        }
+        actions={[
+          {
+            key: 'again',
+            text: lastArtifactDrawAmount === 10 ? '再次10連' : '再次單抽',
+            onClick: () => handleDrawArtifact(lastArtifactDrawAmount),
+            style: { color: '#FF9800', fontWeight: 'bold' }
+          },
+          {
+            key: 'ok',
+            text: '確定',
+            bold: true,
+            onClick: () => setArtifactDialogVisible(false)
+          }
+        ]}
+      />
+
     </div>
   );
 };

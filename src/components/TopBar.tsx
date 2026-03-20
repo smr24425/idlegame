@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Player } from '../types/game';
 import { calculatePower } from '../utils/gameLogic';
 import { FormattedNumber } from './FormattedNumber';
 import { getItemConfig } from '../utils/gameLogic';
-import { Dialog, Toast } from 'antd-mobile';
+import { Dialog } from 'antd-mobile';
 
 interface TopBarProps {
   player: Player;

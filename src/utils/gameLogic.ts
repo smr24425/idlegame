@@ -1,4 +1,4 @@
-import { Player, Equipment, Boss, PetConfig, PetEffectType } from '../types/game';
+import { Player, Equipment, Boss, PetConfig, PetEffectType, ArtifactConfig } from '../types/game';
 
 export interface ItemConfig {
   id: string;
@@ -11,7 +11,67 @@ export const BASE_ITEM_CONFIGS: Record<string, Omit<ItemConfig, 'id'>> = {
   money: { name: '金幣', icon: '🪙', description: '基本的交易貨幣' },
   diamonds: { name: '鑽石', icon: '💎', description: '珍貴的抽卡資源' },
   upgrade_stone: { name: '強化石', icon: '🔮', description: '用於強化裝備的神祕石頭' },
-  pet_upgrade_fragment: { name: '寵物強化石', icon: '💠', description: '通用的寵物強化素材' },
+  pet_upgrade_fragment: { name: '幼龍碎片', icon: '💠', description: '通用的寵物強化素材' }, // Adjusted to fit Omit<ItemConfig, 'id'>
+};
+
+export const ARTIFACT_CONFIGS: ArtifactConfig[] = [
+  { id: 'a1_rusted_anvil', name: '鏽蝕鐵砧', effectType: 'enhanceCostReduction', baseValue: 0.05, description: '裝備欄位強化消耗的金幣減少 {val}%', rarity: 'R', passiveType: 'healthPercentage', passiveBaseValue: 0.01, levelGrowth: 0.005 },
+  { id: 'a2_sharp_whetstone', name: '鋒利磨刀石', effectType: 'baseAttack', baseValue: 50, description: '基礎攻擊力 +{val}', rarity: 'R', passiveType: 'attackPercentage', passiveBaseValue: 0.01, levelGrowth: 50 },
+  { id: 'a3_thick_pad', name: '加厚皮墊', effectType: 'baseDefense', baseValue: 30, description: '基礎防禦力 +{val}', rarity: 'R', passiveType: 'defensePercentage', passiveBaseValue: 0.01, levelGrowth: 30 },
+  { id: 'a4_blood_bandage', effectType: 'baseHealth', baseValue: 200, description: '基礎生命值 +{val}', rarity: 'R', name: '浸血繃帶', passiveType: 'healthPercentage', passiveBaseValue: 0.01, levelGrowth: 200 },
+  { id: 'a5_old_ring', name: '老舊指環', effectType: 'critDamage', baseValue: 0.1, description: '暴擊傷害 +{val}%', rarity: 'R', passiveType: 'attackPercentage', passiveBaseValue: 0.01, levelGrowth: 0.005 },
+  { id: 'a6_observer_monocle', name: '觀察者單鏡', effectType: 'critRate', baseValue: 0.01, description: '暴擊率 +{val}%', rarity: 'R', passiveType: 'attackPercentage', passiveBaseValue: 0.01, levelGrowth: 0.005 },
+  { id: 'a7_battle_banner', name: '戰鬥旗幟', effectType: 'expGain', baseValue: 0.05, description: '掛機獲得的經驗值 +{val}%', rarity: 'R', passiveType: 'healthPercentage', passiveBaseValue: 0.01, levelGrowth: 0.005 },
+  { id: 'a8_lucky_pouch', name: '幸運錢袋', effectType: 'goldGain', baseValue: 0.1, description: '掛機獲得的金幣量 +{val}%', rarity: 'R', passiveType: 'defensePercentage', passiveBaseValue: 0.01, levelGrowth: 0.005 },
+  { id: 'a9_apprentice_bracers', name: '學徒護腕', effectType: 'baseAttack', baseValue: 50, description: '基礎攻擊力 +{val}', rarity: 'R', passiveType: 'attackPercentage', passiveBaseValue: 0.01, levelGrowth: 50 },
+  { id: 'a10_rusted_scales', name: '生鏽天平', effectType: 'attackGreaterThanDefenseCritDmg', baseValue: 0.05, description: '若攻擊力大於防禦力，暴擊傷害額外 +{val}%', rarity: 'R', passiveType: 'defensePercentage', passiveBaseValue: 0.01, levelGrowth: 0.005 },
+  { id: 'a11_artisan_gloves', name: '工匠手套', effectType: 'upgradeStoneDropRate', baseValue: 0.05, description: '強化石 (🔮) 掉落機率提升 {val}%', rarity: 'R', passiveType: 'healthPercentage', passiveBaseValue: 0.01, levelGrowth: 0.005 },
+  { id: 'a12_broken_crest', name: '殘破盾徽', effectType: 'lowHealthDefense', baseValue: 0.15, description: '生命值低於 25% 時，防禦力提升 {val}%', rarity: 'R', passiveType: 'defensePercentage', passiveBaseValue: 0.01, levelGrowth: 0.005 },
+  { id: 'a13_ancient_coin', name: '古老硬幣', effectType: 'gachaCostReduction', baseValue: 0.03, description: '裝備抽卡金幣消耗減少 {val}%', rarity: 'R', passiveType: 'attackPercentage', passiveBaseValue: 0.01, levelGrowth: 0.005 },
+  { id: 'a14_pet_collar', name: '寵物項圈', effectType: 'petStoneDropRate', baseValue: 0.03, description: '寵物強化石 (💠) 掉落機率提升 {val}%', rarity: 'R', passiveType: 'healthPercentage', passiveBaseValue: 0.01, levelGrowth: 0.005 },
+  { id: 'a15_medal_courage', name: '勇氣勳章', effectType: 'highLevelBossDamage', baseValue: 0.05, description: '對當前等級大於自己的 Boss 傷害 +{val}%', rarity: 'R', passiveType: 'attackPercentage', passiveBaseValue: 0.01, levelGrowth: 0.005 },
+  { id: 'a16_first_aid', name: '急救包', effectType: 'turnHealthRegen', baseValue: 0.01, description: '每 5 回合恢復 {val}% 的最大生命值', rarity: 'R', passiveType: 'healthPercentage', passiveBaseValue: 0.01, levelGrowth: 0.005 },
+  { id: 'a17_weighted_lead', name: '負重鉛塊', effectType: 'defenseUpHealthDown', baseValue: 0.05, description: '防禦力 +{val}%，但生命值 -2%', rarity: 'R', passiveType: 'defensePercentage', passiveBaseValue: 0.01, levelGrowth: 0.005 },
+  { id: 'a18_worn_boots', name: '磨損皮靴', effectType: 'dodgeRate', baseValue: 0.02, description: '角色閃避率 +{val}%', rarity: 'R', passiveType: 'defensePercentage', passiveBaseValue: 0.01, levelGrowth: 0.005 },
+  { id: 'a19_berserk_heart', name: '狂戰士之心', effectType: 'halfHealthAttackUp', baseValue: 0.5, description: '生命低於 50% 時，攻擊力提升 {val}%', rarity: 'SR', passiveType: 'attackPercentage', passiveBaseValue: 0.01, levelGrowth: 0.01 },
+  { id: 'a20_gold_body', name: '不壞金身', effectType: 'hpToDefense', baseValue: 0.02, description: '將總生命值的 {val}% 轉化為固定防禦力', rarity: 'SR', passiveType: 'defensePercentage', passiveBaseValue: 0.01, levelGrowth: 0.01 },
+  { id: 'a21_sniper_scope', name: '精準狙擊鏡', effectType: 'critRate', baseValue: 0.05, description: '暴擊率 +{val}%', rarity: 'SR', passiveType: 'attackPercentage', passiveBaseValue: 0.01, levelGrowth: 0.01 },
+  { id: 'a22_greed_box', name: '貪婪魔盒', effectType: 'bossHighRarityDrop', baseValue: 0.1, description: '擊敗 Boss 有 {val}% 機率掉落紫色以上裝備', rarity: 'SR', passiveType: 'healthPercentage', passiveBaseValue: 0.01, levelGrowth: 0.01 },
+  { id: 'a23_phantom_cloak', name: '幻影斗篷', effectType: 'dodgeDamageBoost', baseValue: 1.0, description: '閃避 Boss 攻擊後，下一擊傷害提升 {val}%', rarity: 'SR', passiveType: 'defensePercentage', passiveBaseValue: 0.01, levelGrowth: 0.01 },
+  { id: 'a24_giant_spine', name: '巨人之脊', effectType: 'totalHealthMultiplier', baseValue: 0.25, description: '總生命值提升 {val}%', rarity: 'SR', passiveType: 'healthPercentage', passiveBaseValue: 0.01, levelGrowth: 0.01 },
+  { id: 'a25_combo_shadow', name: '連擊殘影', effectType: 'doubleAttackChance', baseValue: 0.12, description: '普通攻擊有 {val}% 機率造成兩次傷害', rarity: 'SR', passiveType: 'attackPercentage', passiveBaseValue: 0.01, levelGrowth: 0.01 },
+  { id: 'a26_miser_ring', name: '守財奴指環', effectType: 'goldToAttack', baseValue: 0.2, description: '身上金幣每達 100 萬，攻擊力提升 1% (最高 {val}%)', rarity: 'SR', passiveType: 'defensePercentage', passiveBaseValue: 0.01, levelGrowth: 0.01 },
+  { id: 'a27_vengeful_spikes', name: '復仇尖刺', effectType: 'damageReflect', baseValue: 0.15, description: '受到傷害時，反彈 {val}% 的傷害給 Boss（無視防禦）', rarity: 'SR', passiveType: 'healthPercentage', passiveBaseValue: 0.01, levelGrowth: 0.01 },
+  { id: 'a28_tactical_manual', name: '戰術手冊', effectType: 'finalDamageMultiplier', baseValue: 0.08, description: '對 Boss 造成的最終傷害總計提升 {val}%', rarity: 'SR', passiveType: 'attackPercentage', passiveBaseValue: 0.01, levelGrowth: 0.01 },
+  { id: 'a29_lucky_rabbit', name: '幸運兔腳', effectType: 'gachaHighRarityBoost', baseValue: 0.5, description: '裝備抽卡出現「金裝以上」的機率額外提升 {val}%', rarity: 'SR', passiveType: 'healthPercentage', passiveBaseValue: 0.01, levelGrowth: 0.01 },
+  { id: 'a30_eternal_amulet', name: '永恆護符', effectType: 'highHealthAttackUp', baseValue: 0.15, description: '當生命值高於 80% 時，攻擊力提升 {val}%', rarity: 'SR', passiveType: 'defensePercentage', passiveBaseValue: 0.01, levelGrowth: 0.01 },
+  { id: 'a31_master_hammer', name: '鍛造大師錘', effectType: 'enhanceSlotBonusIncrease', baseValue: 0.01, description: '裝備欄位的額外加成效果，每等額外提升 {val}% (原本基底為每一等 5%)', rarity: 'SR', passiveType: 'attackPercentage', passiveBaseValue: 0.01, levelGrowth: 0.01 }
+];
+
+export const getArtifactUpgradeCost = (currentTier: number) => {
+  if (currentTier >= 10) return -1;
+  return 40 + (currentTier - 1) * 10;
+};
+
+export const getArtifactEffectValue = (player: Player, effectType: ArtifactConfig['effectType']) => {
+  let totalValue = 0;
+  if (!player || !player.equippedArtifactIds) return totalValue;
+
+  player.equippedArtifactIds.forEach(id => {
+    if (!id) return;
+    const artifact = player.artifacts ? player.artifacts[id] : null;
+    if (artifact) {
+      const config = ARTIFACT_CONFIGS.find(c => c.id === id);
+      if (config && config.effectType === effectType) {
+        if (config.levelGrowth !== undefined) {
+          totalValue += config.baseValue + (artifact.level - 1) * config.levelGrowth;
+        } else {
+          totalValue += config.baseValue * artifact.level;
+        }
+      }
+    }
+  });
+  return totalValue;
 };
 
 export const getItemConfig = (id: string, fallbackName?: string): ItemConfig => {
@@ -75,16 +135,20 @@ export const getSalvageStones = (eq: Equipment): number => {
   return baseStones > 0 ? Math.max(1, Math.floor(baseStones * Math.max(1, eq.level / 10))) : 0;
 };
 
-export const getEnhanceCost = (currentLevel: number) => {
-  const gold = 100 * (currentLevel + 1);
-  const requiresStones = (currentLevel + 1) % 10 === 0;
-  const stones = requiresStones ? Math.floor((currentLevel + 1) / 10) * 5 : 0;
+export const getEnhanceCost = (level: number, player: Player) => {
+  const baseGold = (level + 1) * 200;
+  const reduction = getArtifactEffectValue(player, 'enhanceCostReduction');
+  const gold = Math.floor(baseGold * (1 - reduction));
+  const stones = level >= 10 ? Math.floor(level / 5) * 2 : 0;
   return { gold, stones };
 };
 
-export const getEnhancedStat = (eq: Equipment | null, slotLevel: number, statKey: keyof Equipment['stats']): number => {
+export const getEnhancedStat = (eq: Equipment | null, slotLevel: number, statKey: keyof Equipment['stats'], player?: Player): number => {
   if (!eq || !eq.stats[statKey]) return 0;
-  const multiplier = 1 + slotLevel * 0.05;
+  
+  const artifactBonus = player ? getArtifactEffectValue(player, 'enhanceSlotBonusIncrease') : 0;
+  const multiplier = 1 + slotLevel * (0.05 + artifactBonus);
+  
   const baseStat = eq.stats[statKey]!;
   if (statKey === 'critRate' || statKey === 'critDamage') {
     return baseStat * multiplier; // Keep decimal for crit stats
@@ -116,7 +180,7 @@ export const calculateAutoEnhance = (player: Player, inventoryStones: number) =>
     
     if (!minSlot) break;
     
-    const { gold, stones } = getEnhanceCost(slotLevels[minSlot]);
+    const { gold, stones } = getEnhanceCost(slotLevels[minSlot], player);
     
     if (remainingGold >= gold && remainingStones >= stones) {
       remainingGold -= gold;
@@ -134,14 +198,14 @@ export const calculateAutoEnhance = (player: Player, inventoryStones: number) =>
   let missingStones = 0;
   if (!canUpgradeAny) {
     let minLevel = Infinity;
-    let minSlot: typeof slots[number] = 'weapon';
+    let minSlot: typeof slots[number] = 'weapon'; // Initialize to a valid slot
     for (const slot of slots) {
       if (slotLevels[slot] < minLevel) {
         minLevel = slotLevels[slot];
         minSlot = slot;
       }
     }
-    const { gold, stones } = getEnhanceCost(slotLevels[minSlot]);
+    const { gold, stones } = getEnhanceCost(slotLevels[minSlot], player);
     if (remainingGold < gold) missingGold = gold - remainingGold;
     if (remainingStones < stones) missingStones = stones - remainingStones;
   }
@@ -212,16 +276,38 @@ export const getGlobalPetPassiveStats = (player: Player) => {
   return { hpPercent, atkPercent, defPercent };
 };
 
+export const getGlobalArtifactPassiveStats = (player: Player) => {
+  let hpPercent = 0;
+  let atkPercent = 0;
+  let defPercent = 0;
+
+  if (!player || !player.artifacts) return { hpPercent, atkPercent, defPercent };
+
+  Object.values(player.artifacts).forEach(artifact => {
+    if (artifact.level > 0) {
+      const config = ARTIFACT_CONFIGS.find(c => c.id === artifact.configId);
+      if (config && config.passiveType && config.passiveBaseValue) {
+        const effectiveValue = config.passiveBaseValue * artifact.level;
+        if (config.passiveType === 'healthPercentage') hpPercent += effectiveValue;
+        else if (config.passiveType === 'attackPercentage') atkPercent += effectiveValue;
+        else if (config.passiveType === 'defensePercentage') defPercent += effectiveValue;
+      }
+    }
+  });
+
+  return { hpPercent, atkPercent, defPercent };
+};
+
 export const getTotalStats = (player: Player) => {
   const baseAttack = player.attributes.attack;
   const baseDefense = player.attributes.defense;
   const baseHealth = 100 + player.attributes.health * 10;
 
-  const equipAttack = Object.entries(player.equipment).reduce((sum, [type, eq]) => sum + getEnhancedStat(eq, player.slotLevels[type as Equipment['type']], 'attack'), 0);
-  const equipDefense = Object.entries(player.equipment).reduce((sum, [type, eq]) => sum + getEnhancedStat(eq, player.slotLevels[type as Equipment['type']], 'defense'), 0);
-  const equipHealth = Object.entries(player.equipment).reduce((sum, [type, eq]) => sum + getEnhancedStat(eq, player.slotLevels[type as Equipment['type']], 'health'), 0);
-  const equipCritRate = Object.entries(player.equipment).reduce((sum, [type, eq]) => sum + getEnhancedStat(eq, player.slotLevels[type as Equipment['type']], 'critRate'), 0);
-  const equipCritDamage = Object.entries(player.equipment).reduce((sum, [type, eq]) => sum + getEnhancedStat(eq, player.slotLevels[type as Equipment['type']], 'critDamage'), 0);
+  const equipAttack = Object.entries(player.equipment).reduce((sum, [type, eq]) => sum + getEnhancedStat(eq, player.slotLevels[type as Equipment['type']], 'attack', player), 0);
+  const equipDefense = Object.entries(player.equipment).reduce((sum, [type, eq]) => sum + getEnhancedStat(eq, player.slotLevels[type as Equipment['type']], 'defense', player), 0);
+  const equipHealth = Object.entries(player.equipment).reduce((sum, [type, eq]) => sum + getEnhancedStat(eq, player.slotLevels[type as Equipment['type']], 'health', player), 0);
+  const equipCritRate = Object.entries(player.equipment).reduce((sum, [type, eq]) => sum + getEnhancedStat(eq, player.slotLevels[type as Equipment['type']], 'critRate', player), 0);
+  const equipCritDamage = Object.entries(player.equipment).reduce((sum, [type, eq]) => sum + getEnhancedStat(eq, player.slotLevels[type as Equipment['type']], 'critDamage', player), 0);
 
   const petSlotHealth = (player.petSlotLevel || 1) * 10;
   const petSlotAttack = (player.petSlotLevel || 1) * 5;
@@ -236,12 +322,46 @@ export const getTotalStats = (player: Player) => {
   const petAttackBuff = Math.floor(rawTotalAttack * globalPets.atkPercent);
   const petDefenseBuff = Math.floor(rawTotalDefense * globalPets.defPercent);
 
-  const totalAttack = rawTotalAttack + petAttackBuff;
-  const totalDefense = rawTotalDefense + petDefenseBuff;
-  const totalHealth = rawTotalHealth + petHealthBuff;
+  const globalArtifacts = getGlobalArtifactPassiveStats(player);
+  const artifactPassiveHealthBuff = Math.floor(rawTotalHealth * globalArtifacts.hpPercent);
+  const artifactPassiveAttackBuff = Math.floor(rawTotalAttack * globalArtifacts.atkPercent);
+  const artifactPassiveDefenseBuff = Math.floor(rawTotalDefense * globalArtifacts.defPercent);
+
+  // Artifact Base Flat Stats
+  const artifactAttack = getArtifactEffectValue(player, 'baseAttack');
+  const artifactDefense = getArtifactEffectValue(player, 'baseDefense');
+  const artifactHealth = getArtifactEffectValue(player, 'baseHealth');
+
+  const hpToDefenseBuff = Math.floor(rawTotalHealth * getArtifactEffectValue(player, 'hpToDefense'));
+  const totalHealthMultiplier = getArtifactEffectValue(player, 'totalHealthMultiplier');
   
-  const totalCrit = player.attributes.critRate + equipCritRate;
-  const totalCritDmg = player.attributes.critDamage + equipCritDamage;
+  // 守財奴指環: goldToAttack (上限 Cap 是 baseValue, Rate is 1% per 1M)
+  // Wait, user specified "這指的是人物屬性的攻擊最終加成 例如所有攻擊力都計算完畢後攻擊力為1000,那麼穿戴該神器會變為1200(最高Lv10 30%)"
+  // Meaning the MAX CAP scales, and it's a multiplier to totalAttack. We apply this later to totalAttack.
+  
+  // Artifact Multipliers
+  const leadDefPercent = getArtifactEffectValue(player, 'defenseUpHealthDown'); // 5% per level def increase
+  const leadHpPercent = leadDefPercent > 0 ? (0.02 * (leadDefPercent / 0.05)) : 0; // -2% per level hp decrease
+
+  let totalAttack = rawTotalAttack + petAttackBuff + artifactPassiveAttackBuff + artifactAttack;
+  const totalDefense = Math.floor((rawTotalDefense + petDefenseBuff + artifactPassiveDefenseBuff + artifactDefense + hpToDefenseBuff) * (1 + leadDefPercent));
+  const totalHealth = Math.floor((rawTotalHealth + petHealthBuff + artifactPassiveHealthBuff + artifactHealth) * (1 + totalHealthMultiplier) * (1 - leadHpPercent));
+  
+  const goldToAttackCap = getArtifactEffectValue(player, 'goldToAttack');
+  if (goldToAttackCap > 0) {
+     const goldMultiplier = Math.min(goldToAttackCap, Math.floor(player.money / 1000000) * 0.01);
+     totalAttack += Math.floor(totalAttack * goldMultiplier);
+  }
+  
+  const artifactCritRate = getArtifactEffectValue(player, 'critRate');
+  let artifactCritDmg = getArtifactEffectValue(player, 'critDamage');
+  
+  if (totalAttack > totalDefense) {
+    artifactCritDmg += getArtifactEffectValue(player, 'attackGreaterThanDefenseCritDmg');
+  }
+
+  const totalCrit = player.attributes.critRate + equipCritRate + artifactCritRate;
+  const totalCritDmg = player.attributes.critDamage + equipCritDamage + artifactCritDmg;
 
   return {
     health: Math.floor(totalHealth),
@@ -368,14 +488,20 @@ export const generateEquipment = (stage: number, dropChance: number = 0.3, dropR
   };
 };
 
-export const generateGachaEquipment = (playerLevel: number): Equipment => {
+export const generateGachaEquipment = (playerLevel: number, highRarityBoost: number = 0): Equipment => {
   const types: Equipment['type'][] = ['weapon', 'armor', 'pants', 'gloves', 'ring', 'necklace'];
   const type = types[Math.floor(Math.random() * types.length)];
 
   const rarities: Equipment['rarity'][] = ['white', 'green', 'blue', 'purple', 'gold', 'red'];
   // Probabilities: White: 40%, Green: 35%, Blue: 15%, Purple: 8.9%, Gold: 1%, Red: 0.1%
   const rarityWeights = [400, 350, 150, 89, 10, 1]; 
-  const totalWeight = 1000;
+  
+  if (highRarityBoost > 0) {
+      rarityWeights[4] *= (1 + highRarityBoost); // Gold
+      rarityWeights[5] *= (1 + highRarityBoost); // Red
+  }
+  
+  const totalWeight = rarityWeights.reduce((a, b) => a + b, 0);
   let random = Math.random() * totalWeight;
   let rarityIndex = 0;
   for (let i = 0; i < rarityWeights.length; i++) {
