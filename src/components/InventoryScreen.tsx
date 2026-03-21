@@ -262,12 +262,39 @@ export const InventoryScreen: React.FC<InventoryScreenProps> = ({ gameState, onE
               <p style={{ margin: '8px 0', fontSize: '16px' }}>
                 <span style={{ color: getBorderColor(selectedEquipment.rarity) }}>稀有度:</span> {selectedEquipment.rarity}
               </p>
-              <p style={{ margin: '8px 0 5px 0', fontSize: '16px', color: '#FFD700' }}>裝備屬性:</p>
-              <ul>
-                {Object.entries(selectedEquipment.stats).map(([key, value]) => (
-                  <li key={key}>{statNames[key as keyof typeof statNames] || key}: {formatStatValue(key, value)}</li>
-                ))}
-              </ul>
+              {selectedEquipment.mainStat && (
+                <>
+                  <p style={{ margin: '8px 0 5px 0', fontSize: '16px', color: '#FFD700', fontWeight: 'bold' }}>◇ 主屬性:</p>
+                  <ul style={{ paddingLeft: '20px', margin: '5px 0' }}>
+                    <li key={selectedEquipment.mainStat.key}>
+                      {statNames[selectedEquipment.mainStat.key as keyof typeof statNames] || selectedEquipment.mainStat.key}: {formatStatValue(selectedEquipment.mainStat.key, selectedEquipment.mainStat.value)}
+                    </li>
+                  </ul>
+                </>
+              )}
+              {selectedEquipment.subStats && selectedEquipment.subStats.length > 0 ? (
+                <>
+                  <p style={{ margin: '8px 0 5px 0', fontSize: '16px', color: '#00E5FF' }}>◆ 附加屬性:</p>
+                  <ul style={{ paddingLeft: '20px', margin: '5px 0' }}>
+                    {selectedEquipment.subStats.map((sub, idx) => (
+                      <li key={idx}>
+                        {statNames[sub.key as keyof typeof statNames] || sub.key}: {formatStatValue(sub.key, sub.value)}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : !selectedEquipment.mainStat && (
+                <>
+                  <p style={{ margin: '8px 0 5px 0', fontSize: '16px', color: '#FFD700' }}>裝備基礎屬性:</p>
+                  <ul style={{ paddingLeft: '20px', margin: '5px 0' }}>
+                    {Object.entries(selectedEquipment.stats).map(([key, value]) => (
+                      <li key={key}>
+                        {statNames[key as keyof typeof statNames] || key}: {formatStatValue(key, value)}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
             </div>
           }
           closeOnAction

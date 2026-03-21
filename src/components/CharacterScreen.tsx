@@ -43,13 +43,19 @@ export const CharacterScreen: React.FC<CharacterScreenProps> = ({ player, invent
       const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
       // @ts-ignore
       const rebirthVal = stats[`rebirth${capitalize(statKey)}Bonus`] || 0;
-      const bonus = stats[statKey] - base - rebirthVal;
+      // @ts-ignore
+      const equipVal = stats[`equip${capitalize(statKey)}`] || 0;
+      // @ts-ignore
+      const artifactVal = stats[`artifact${capitalize(statKey)}`] || 0;
+      
       return (
         <span>
           {(stats[statKey] * 100).toFixed(1)}% (
           <span style={{ color: '#4CAF50', marginLeft: '5px' }}>基礎: {(base * 100).toFixed(1)}%</span>
           {' + '}
-          <span style={{ color: '#00E5FF' }}>裝備/神器: {(bonus * 100).toFixed(1)}%</span>
+          <span style={{ color: '#00E5FF' }}>裝備: {(equipVal * 100).toFixed(1)}%</span>
+          {' + '}
+          <span style={{ color: '#FFD700' }}>神器: {(artifactVal * 100).toFixed(1)}%</span>
           {rebirthVal > 0 && (
             <>
               {' + '}
@@ -350,8 +356,8 @@ export const CharacterScreen: React.FC<CharacterScreenProps> = ({ player, invent
             const eq = player.equipment[selectedSlot];
             const slotLevel = player.slotLevels[selectedSlot];
             const { gold, stones } = getEnhanceCost(slotLevel, player);
-            const currentMult = (slotLevel * 5) + "%";
-            const nextMult = ((slotLevel + 1) * 5) + "%";
+            const currentMult = (slotLevel * 1) + "%";
+            const nextMult = ((slotLevel + 1) * 1) + "%";
 
             return (
               <Dialog
@@ -379,14 +385,39 @@ export const CharacterScreen: React.FC<CharacterScreenProps> = ({ player, invent
                         <p style={{ margin: '8px 0', fontSize: '16px' }}>
                           <span style={{ color: getBorderColor(eq.rarity) }}>稀有度:</span> {eq.rarity}
                         </p>
-                        <p style={{ margin: '8px 0 5px 0', fontSize: '16px', color: '#FFD700' }}>裝備基礎屬性:</p>
-                        <ul style={{ paddingLeft: '20px', margin: '5px 0' }}>
-                          {Object.entries(eq.stats).map(([key, value]) => (
-                            <li key={key}>
-                              {statNames[key as keyof typeof statNames] || key}: {formatStatValue(key, value)}
-                            </li>
-                          ))}
-                        </ul>
+                        {eq.mainStat && (
+                          <>
+                            <p style={{ margin: '8px 0 5px 0', fontSize: '16px', color: '#FFD700', fontWeight: 'bold' }}>◇ 主屬性:</p>
+                            <ul style={{ paddingLeft: '20px', margin: '5px 0' }}>
+                              <li key={eq.mainStat.key}>
+                                {statNames[eq.mainStat.key as keyof typeof statNames] || eq.mainStat.key}: {formatStatValue(eq.mainStat.key, eq.mainStat.value)}
+                              </li>
+                            </ul>
+                          </>
+                        )}
+                        {eq.subStats && eq.subStats.length > 0 ? (
+                          <>
+                            <p style={{ margin: '8px 0 5px 0', fontSize: '16px', color: '#00E5FF' }}>◆ 附加屬性:</p>
+                            <ul style={{ paddingLeft: '20px', margin: '5px 0' }}>
+                              {eq.subStats.map((sub, idx) => (
+                                <li key={idx}>
+                                  {statNames[sub.key as keyof typeof statNames] || sub.key}: {formatStatValue(sub.key, sub.value)}
+                                </li>
+                              ))}
+                            </ul>
+                          </>
+                        ) : !eq.mainStat && (
+                          <>
+                            <p style={{ margin: '8px 0 5px 0', fontSize: '16px', color: '#FFD700' }}>裝備基礎屬性:</p>
+                            <ul style={{ paddingLeft: '20px', margin: '5px 0' }}>
+                              {Object.entries(eq.stats).map(([key, value]) => (
+                                <li key={key}>
+                                  {statNames[key as keyof typeof statNames] || key}: {formatStatValue(key, value)}
+                                </li>
+                              ))}
+                            </ul>
+                          </>
+                        )}
                       </>
                     ) : (
                       <p style={{ color: 'var(--muted)', textAlign: 'center', margin: '20px 0' }}>此欄位尚未裝備物品</p>
@@ -397,7 +428,7 @@ export const CharacterScreen: React.FC<CharacterScreenProps> = ({ player, invent
                         欄位強化 (Lv.{slotLevel})
                       </p>
                       <p style={{ margin: '5px 0', fontSize: '14px', color: '#4CAF50' }}>
-                        裝備屬性加成: +{currentMult} ➔ <span style={{ color: '#FFD700' }}>+{nextMult}</span>
+                        主屬性加成: +{currentMult} ➔ <span style={{ color: '#FFD700' }}>+{nextMult}</span>
                       </p>
                       <p style={{ margin: '5px 0', fontSize: '14px' }}>
                         升級消耗: {getItemConfig('money').icon} {gold} {getItemConfig('money').name} {stones > 0 ? `+ ${getItemConfig('upgrade_stone').icon} ${stones} ${getItemConfig('upgrade_stone').name}` : ''}

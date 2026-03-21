@@ -45,7 +45,7 @@ export const ARTIFACT_CONFIGS: ArtifactConfig[] = [
   { id: 'a28_tactical_manual', name: '戰術手冊', effectType: 'finalDamageMultiplier', baseValue: 0.08, description: '對 Boss 造成的最終傷害總計提升 {val}%', rarity: 'SR', passiveType: 'attackPercentage', passiveBaseValue: 0.01, levelGrowth: 0.01 },
   { id: 'a29_lucky_rabbit', name: '幸運兔腳', effectType: 'gachaHighRarityBoost', baseValue: 0.5, description: '裝備抽卡出現「金裝以上」的機率額外提升 {val}%', rarity: 'SR', passiveType: 'healthPercentage', passiveBaseValue: 0.01, levelGrowth: 0.01 },
   { id: 'a30_eternal_amulet', name: '永恆護符', effectType: 'highHealthAttackUp', baseValue: 0.15, description: '當生命值高於 80% 時，攻擊力提升 {val}%', rarity: 'SR', passiveType: 'defensePercentage', passiveBaseValue: 0.01, levelGrowth: 0.01 },
-  { id: 'a31_master_hammer', name: '鍛造大師錘', effectType: 'enhanceSlotBonusIncrease', baseValue: 0.01, description: '裝備欄位的額外加成效果，每等額外提升 {val}% (原本基底為每一等 5%)', rarity: 'SR', passiveType: 'attackPercentage', passiveBaseValue: 0.01, levelGrowth: 0.01 }
+  { id: 'a31_master_hammer', name: '鍛造大師錘', effectType: 'enhanceSlotBonusIncrease', baseValue: 0.01, description: '裝備欄位的額外加成效果，每等額外提升 {val}%', rarity: 'SR', passiveType: 'attackPercentage', passiveBaseValue: 0.01, levelGrowth: 0.001 }
 ];
 
 export const getArtifactUpgradeCost = (currentTier: number) => {
@@ -147,11 +147,26 @@ export const getEnhancedStat = (eq: Equipment | null, slotLevel: number, statKey
   if (!eq || !eq.stats[statKey]) return 0;
 
   const artifactBonus = player ? getArtifactEffectValue(player, 'enhanceSlotBonusIncrease') : 0;
-  const multiplier = 1 + slotLevel * (0.05 + artifactBonus);
+
+  const mainStats: Record<Equipment['type'], keyof Equipment['stats']> = {
+    weapon: 'attack',
+    armor: 'health',
+    pants: 'defense',
+    gloves: 'critDamage',
+    ring: 'critDamage',
+    necklace: 'attack'
+  };
+
+  const isMainStat = mainStats[eq.type] === statKey;
+  const multiplier = isMainStat ? (1 + slotLevel * (0.01 + artifactBonus)) : 1;
 
   const baseStat = eq.stats[statKey]!;
-  if (statKey === 'critRate' || statKey === 'critDamage') {
-    return baseStat * multiplier; // Keep decimal for crit stats
+  if (statKey === 'critRate') {
+    return baseStat * multiplier;
+  }
+  if (statKey === 'critDamage') {
+    // 暴擊傷害是加法
+    return baseStat + multiplier;
   }
   return Math.floor(baseStat * multiplier);
 };
@@ -348,7 +363,8 @@ export const getTotalStats = (player: Player) => {
   let totalHealth = Math.floor((rawTotalHealth + petHealthBuff + artifactPassiveHealthBuff + artifactHealth) * (1 + totalHealthMultiplier) * (1 - leadHpPercent));
 
   const rebirths = player.rebirths || 0;
-  const rebirthMultiplier = 1 + rebirths * 0.03;
+  //每次重生生命防禦攻擊提升20%
+  const rebirthMultiplier = 1 + rebirths * 0.2;
 
   const preRebirthAttack = totalAttack;
   const preRebirthDefense = totalDefense;
@@ -375,8 +391,10 @@ export const getTotalStats = (player: Player) => {
     artifactCritDmg += getArtifactEffectValue(player, 'attackGreaterThanDefenseCritDmg');
   }
 
-  const totalCrit = player.attributes.critRate + equipCritRate + artifactCritRate + (rebirths * 0.005);
-  const totalCritDmg = player.attributes.critDamage + equipCritDamage + artifactCritDmg + (rebirths * 0.01);
+  //每次重生暴擊率提升1%
+  const totalCrit = player.attributes.critRate + equipCritRate + artifactCritRate + (rebirths * 0.01);
+  //每次重生暴擊傷害提升50%
+  const totalCritDmg = player.attributes.critDamage + equipCritDamage + artifactCritDmg + (rebirths * 0.50);
 
   return {
     health: Math.floor(totalHealth),
@@ -384,12 +402,14 @@ export const getTotalStats = (player: Player) => {
     defense: Math.floor(totalDefense),
     critRate: totalCrit,
     critDamage: totalCritDmg,
-    baseHealth,
-    baseAttack,
     baseDefense,
     equipHealth,
     equipAttack,
     equipDefense,
+    equipCritRate,
+    equipCritDamage,
+    artifactCritRate,
+    artifactCritDamage: artifactCritDmg,
     petSlotHealth,
     petSlotAttack,
     petHealthBuff,
@@ -437,9 +457,23 @@ export const getBossHealth = (stage: number) => {
   return Math.floor(baseLinear * multiplier);
 };
 
+export const getBossAttack = (stage: number) => {
+  //前10關必贏
+  if (stage <= 10) {
+    return 10;
+  }
+  const baseLinear = 10 + stage * 9;
+
+  // 每 100 關提升一個指數階層 (1.25倍)
+  const exponent = Math.floor(stage / 100);
+  const multiplier = Math.pow(1.1, exponent);
+
+  return Math.floor(baseLinear * multiplier);
+};
+
 export const generateBoss = (stage: number): Boss => {
   const baseHealth = getBossHealth(stage);
-  const baseAttack = 10 + stage * 9;
+  const baseAttack = getBossAttack(stage);
   const baseDefense = stage * 2;
   return {
     name: `Boss of Stage ${stage}`,
@@ -477,6 +511,97 @@ export const getEquipmentValue = (eq: Equipment): number => {
 
   return base + levelBonus;
 };
+const generateEquipmentStats = (
+  type: Equipment['type'],
+  rarity: Equipment['rarity'],
+  multiplier: number,
+  level: number
+): {
+  stats: Equipment['stats'];
+  mainStat: { key: keyof Equipment['stats']; value: number };
+  subStats: Array<{ key: keyof Equipment['stats']; value: number }>;
+} => {
+  const mainStats: Record<Equipment['type'], keyof Equipment['stats']> = {
+    weapon: 'attack',
+    armor: 'health',
+    pants: 'defense',
+    gloves: 'critDamage',
+    ring: 'critDamage',
+    necklace: 'attack'
+  };
+
+  const mainStatValues: Record<Equipment['type'], number> = {
+    weapon: 5,
+    armor: 5,
+    pants: 5,
+    gloves: 0.05,
+    ring: 0.05,
+    necklace: 5
+  };
+
+  const mainStatKey = mainStats[type];
+  const stats: Equipment['stats'] = {};
+
+  const mainVal = mainStatValues[type] * multiplier * (level / 10 + 1);
+  let finalMainVal = mainVal;
+  if (mainStatKey === 'critRate' || mainStatKey === 'critDamage') {
+    finalMainVal = parseFloat(mainVal.toFixed(4));
+  } else {
+    finalMainVal = Math.floor(mainVal);
+  }
+
+  stats[mainStatKey] = finalMainVal;
+  const mainStat = { key: mainStatKey, value: finalMainVal };
+
+  const subStatCounts: Record<Equipment['rarity'], number> = {
+    white: 1, green: 1, blue: 1, purple: 1, gold: 2, red: 3
+  };
+  const numSubStats = subStatCounts[rarity];
+  const possibleSubStats: Array<keyof Equipment['stats']> = ['attack', 'defense', 'health', 'critRate', 'critDamage'];
+
+  const subStats: Array<{ key: keyof Equipment['stats']; value: number }> = [];
+
+  for (let i = 0; i < numSubStats; i++) {
+    const subKey = possibleSubStats[Math.floor(Math.random() * possibleSubStats.length)];
+    let finalSubVal = 0;
+
+    if (subKey === 'critRate') {
+      let randAmt = 0;
+      switch (rarity) {
+        case 'white': randAmt = Math.random() * 0.01; break;
+        case 'green': randAmt = 0.01 + Math.random() * 0.01; break;
+        case 'blue': randAmt = 0.02 + Math.random() * 0.01; break;
+        case 'purple': randAmt = 0.03 + Math.random() * 0.01; break;
+        case 'gold': randAmt = 0.04 + Math.random() * 0.01; break;
+        case 'red': randAmt = 0.05; break;
+      }
+      finalSubVal = parseFloat(randAmt.toFixed(4));
+    } else if (subKey === 'critDamage') {
+      const val = 0.05 * multiplier * (level / 50 + 1);
+      finalSubVal = parseFloat(val.toFixed(4));
+    } else {
+      const baseSubVal = Math.floor(Math.random() * 3) + 3; // Random base 3~5 explicitly for subtats
+      const val = baseSubVal * multiplier * (level / 10 + 1);
+      finalSubVal = Math.floor(val);
+    }
+
+    subStats.push({ key: subKey, value: finalSubVal });
+
+    if (stats[subKey]) {
+      // @ts-ignore
+      stats[subKey] += finalSubVal;
+      if (subKey === 'critRate' || subKey === 'critDamage') {
+        // @ts-ignore
+        stats[subKey] = parseFloat(stats[subKey].toFixed(4));
+      }
+    } else {
+      stats[subKey] = finalSubVal;
+    }
+  }
+
+  return { stats, mainStat, subStats };
+};
+
 export const generateEquipment = (stage: number, dropChance: number = 0.3, dropRateBonus: number = 0): Equipment | null => {
   // dropChance chance to drop equipment
   if (Math.random() > dropChance) return null;
@@ -500,36 +625,7 @@ export const generateEquipment = (stage: number, dropChance: number = 0.3, dropR
   const level = stage + Math.floor(Math.random() * 3) - 1; // stage-1 to stage+1
   const multiplier = rarityMultipliers[rarity];
 
-  const baseStats: Record<Equipment['type'], Partial<Equipment['stats']>> = {
-    weapon: { attack: 5, critRate: 0.02 },
-    armor: { defense: 3, health: 5 },
-    pants: { health: 4, defense: 2 },
-    gloves: { critRate: 0.03, critDamage: 0.05 },
-    ring: { critDamage: 0.05, attack: 2 },
-    necklace: { health: 3, attack: 2, defense: 2 },
-  };
-
-  const stats = { ...baseStats[type] };
-  Object.keys(stats).forEach(key => {
-    const k = key as keyof typeof stats;
-    const val = (stats[k] as number) * multiplier * (level / 10 + 1);
-    if (k === 'critRate') {
-      let randAmt = 0;
-      switch (rarity) {
-        case 'white': randAmt = Math.random() * 0.01; break;
-        case 'green': randAmt = 0.01 + Math.random() * 0.01; break;
-        case 'blue': randAmt = 0.02 + Math.random() * 0.01; break;
-        case 'purple': randAmt = 0.03 + Math.random() * 0.01; break;
-        case 'gold': randAmt = 0.04 + Math.random() * 0.01; break;
-        case 'red': randAmt = 0.05; break;
-      }
-      stats[k] = parseFloat(randAmt.toFixed(4));
-    } else if (k === 'critDamage') {
-      stats[k] = parseFloat(val.toFixed(4));
-    } else {
-      stats[k] = Math.floor(val);
-    }
-  });
+  const { stats, mainStat, subStats } = generateEquipmentStats(type, rarity, multiplier, level);
 
   const typeNames = {
     weapon: '武器',
@@ -555,6 +651,8 @@ export const generateEquipment = (stage: number, dropChance: number = 0.3, dropR
     rarity,
     level,
     stats,
+    mainStat,
+    subStats,
     name: `${rarityNames[rarity]}${level}級${typeNames[type]}`,
   };
 };
@@ -586,36 +684,7 @@ export const generateGachaEquipment = (playerLevel: number, highRarityBoost: num
   const level = playerLevel; // Fixed to player's level
   const multiplier = rarityMultipliers[rarity];
 
-  const baseStats: Record<Equipment['type'], Partial<Equipment['stats']>> = {
-    weapon: { attack: 5, critRate: 0.02 },
-    armor: { defense: 3, health: 5 },
-    pants: { health: 4, defense: 2 },
-    gloves: { critRate: 0.03, critDamage: 0.05 },
-    ring: { critDamage: 0.05, attack: 2 },
-    necklace: { health: 3, attack: 2, defense: 2 },
-  };
-
-  const stats = { ...baseStats[type] };
-  Object.keys(stats).forEach(key => {
-    const k = key as keyof typeof stats;
-    const val = (stats[k] as number) * multiplier * (level / 10 + 1);
-    if (k === 'critRate') {
-      let randAmt = 0;
-      switch (rarity) {
-        case 'white': randAmt = Math.random() * 0.01; break;
-        case 'green': randAmt = 0.01 + Math.random() * 0.01; break;
-        case 'blue': randAmt = 0.02 + Math.random() * 0.01; break;
-        case 'purple': randAmt = 0.03 + Math.random() * 0.01; break;
-        case 'gold': randAmt = 0.04 + Math.random() * 0.01; break;
-        case 'red': randAmt = 0.05; break;
-      }
-      stats[k] = parseFloat(randAmt.toFixed(4));
-    } else if (k === 'critDamage') {
-      stats[k] = parseFloat(val.toFixed(4));
-    } else {
-      stats[k] = Math.floor(val);
-    }
-  });
+  const { stats, mainStat, subStats } = generateEquipmentStats(type, rarity, multiplier, level);
 
   const typeNames = {
     weapon: '武器',
@@ -641,6 +710,8 @@ export const generateGachaEquipment = (playerLevel: number, highRarityBoost: num
     rarity,
     level,
     stats,
+    mainStat,
+    subStats,
     name: `${rarityNames[rarity]}${level}級${typeNames[type]}`,
   };
 };

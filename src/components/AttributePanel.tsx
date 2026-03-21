@@ -1,6 +1,7 @@
+import React, { useEffect, useState } from 'react';
 import { Player } from '../types/game';
-import { Button, Dialog, Space } from 'antd-mobile'; // 加入 Space 讓排版整齊
-import { useEffect, useState } from 'react';
+import { Button, Dialog, Input } from 'antd-mobile';
+import { AddOutline, MinusOutline } from 'antd-mobile-icons'; // 建議安裝 antd-mobile-icons
 
 interface AttributePanelProps {
   player: Player;
@@ -9,149 +10,154 @@ interface AttributePanelProps {
   onClose: () => void;
 }
 
-export const AttributePanel: React.FC<AttributePanelProps> = ({ player, allocatePoint, visible, onClose }) => {
+export const AttributePanel: React.FC<AttributePanelProps> = ({
+  player,
+  allocatePoint,
+  visible,
+  onClose
+}) => {
   const [tempAttributes, setTempAttributes] = useState(player.attributes);
   const [tempPoints, setTempPoints] = useState(player.availablePoints);
-
-  // 單次增加邏輯
-  const handleIncrease = (attr: keyof Player['attributes']) => {
-    if (tempPoints > 0) {
-      if (attr === 'critRate' && tempAttributes.critRate >= 0.40) return;
-
-      setTempAttributes(prev => ({
-        ...prev,
-        [attr]: attr === 'critRate' || attr === 'critDamage'
-          ? parseFloat((prev[attr] + 0.01).toFixed(2))
-          : prev[attr] + 1,
-      }));
-      setTempPoints(prev => prev - 1);
-    }
-  };
-
-  // 全投邏輯 (Max)
-  const handleMax = (attr: keyof Player['attributes']) => {
-    if (tempPoints <= 0) return;
-
-    let pointsToAdd = tempPoints;
-
-    // 暴擊率特殊處理：不能超過 0.40
-    if (attr === 'critRate') {
-      const remainingCrit = 0.40 - tempAttributes.critRate;
-      if (remainingCrit <= 0) return;
-      const maxCritPoints = Math.floor(remainingCrit * 100);
-      pointsToAdd = Math.min(tempPoints, maxCritPoints);
-    }
-
-    setTempAttributes(prev => ({
-      ...prev,
-      [attr]: attr === 'critRate' || attr === 'critDamage'
-        ? parseFloat((prev[attr] + pointsToAdd * 0.01).toFixed(2))
-        : prev[attr] + pointsToAdd,
-    }));
-    setTempPoints(prev => prev - pointsToAdd);
-  };
-
-  // 單次減少邏輯
-  const handleDecrease = (attr: keyof Player['attributes']) => {
-    const minValue = player.attributes[attr];
-    const step = attr === 'critRate' || attr === 'critDamage' ? 0.01 : 1;
-    if (tempAttributes[attr] > minValue) {
-      setTempAttributes(prev => ({
-        ...prev,
-        [attr]: parseFloat((prev[attr] - step).toFixed(2)),
-      }));
-      setTempPoints(prev => prev + 1);
-    }
-  };
-
-  // 全部收回邏輯 (Min)
-  const handleMin = (attr: keyof Player['attributes']) => {
-    const minValue = player.attributes[attr];
-    if (tempAttributes[attr] <= minValue) return;
-
-    const diff = tempAttributes[attr] - minValue;
-    const pointsToReturn = (attr === 'critRate' || attr === 'critDamage')
-      ? Math.round(diff * 100)
-      : diff;
-
-    setTempAttributes(prev => ({
-      ...prev,
-      [attr]: minValue,
-    }));
-    setTempPoints(prev => prev + pointsToReturn);
-  };
-
-  // 確認與取消邏輯保持不變...
-  const handleConfirm = () => {
-    Object.keys(tempAttributes).forEach(key => {
-      const attr = key as keyof Player['attributes'];
-      const delta = tempAttributes[attr] - player.attributes[attr];
-      if (delta <= 0) return;
-      const step = attr === 'critRate' || attr === 'critDamage' ? 0.01 : 1;
-      const pointsToSpend = Math.round(delta / step);
-      for (let i = 0; i < pointsToSpend; i++) {
-        allocatePoint(attr);
-      }
-    });
-    onClose();
-  };
-
-  const handleCancel = () => {
-    setTempAttributes(player.attributes);
-    setTempPoints(player.availablePoints);
-    onClose();
-  };
 
   useEffect(() => {
     if (visible) {
       setTempAttributes(player.attributes);
       setTempPoints(player.availablePoints);
     }
-  }, [player, visible]);
+  }, [visible, player.attributes, player.availablePoints]);
 
-  // 渲染屬性列的元件，減少重覆代碼
-  const renderAttrRow = (label: string, attr: keyof Player['attributes'], isPercent: boolean = false, maxVal?: number) => (
-    <div style={{ marginBottom: 15, borderBottom: '1px solid #f0f0f0', paddingBottom: 8 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-        <span>{label}</span>
-        <span style={{ fontWeight: 'bold', color: '#1677ff' }}>
-          {isPercent ? `${(tempAttributes[attr] * 100).toFixed(1)}%` : tempAttributes[attr]}
-        </span>
+  // 核心：統一處理點數變動
+  const handlePointChange = (attr: keyof Player['attributes'], targetPoints: number, maxVal?: number) => {
+    const isPercent = (attr === 'critRate' || attr === 'critDamage');
+    const step = isPercent ? 0.01 : 1;
+
+    // 1. 計算其他項已消耗點數
+    let otherAttrSpent = 0;
+    (Object.keys(tempAttributes) as Array<keyof Player['attributes']>).forEach(key => {
+      if (key === attr) return;
+      const s = (key === 'critRate' || key === 'critDamage') ? 0.01 : 1;
+      const delta = Math.max(0, tempAttributes[key] - player.attributes[key]);
+      otherAttrSpent += Math.round(delta / s);
+    });
+
+    // 2. 限制：不能超過可用總點數
+    const maxCanSpend = player.availablePoints - otherAttrSpent;
+    let finalPoints = Math.min(targetPoints, maxCanSpend);
+
+    // 3. 限制：不能超過硬上限
+    if (maxVal !== undefined) {
+      const remainingToCap = maxVal - player.attributes[attr];
+      const capPoints = isPercent ? Math.round(remainingToCap * 100) : remainingToCap;
+      finalPoints = Math.min(finalPoints, capPoints);
+    }
+
+    // 4. 下限：不能低於 0（不能扣除原本就有的屬性）
+    finalPoints = Math.max(0, finalPoints);
+
+    // 更新狀態
+    const nextValue = parseFloat((player.attributes[attr] + finalPoints * step).toFixed(2));
+    setTempAttributes(prev => ({ ...prev, [attr]: nextValue }));
+    setTempPoints(player.availablePoints - (otherAttrSpent + finalPoints));
+  };
+
+  const handleConfirm = () => {
+    (Object.keys(tempAttributes) as Array<keyof Player['attributes']>).forEach(key => {
+      const step = (key === 'critRate' || key === 'critDamage') ? 0.01 : 1;
+      const pointsToSpend = Math.round((tempAttributes[key] - player.attributes[key]) / step);
+      for (let i = 0; i < pointsToSpend; i++) allocatePoint(key);
+    });
+    onClose();
+  };
+
+  const renderAttrRow = (label: string, attr: keyof Player['attributes'], isPercent: boolean = false, maxVal?: number) => {
+    const step = isPercent ? 0.01 : 1;
+    const addedPoints = Math.round((tempAttributes[attr] - player.attributes[attr]) / step);
+    const finalPreview = isPercent ? `${Math.round(tempAttributes[attr] * 100)}%` : tempAttributes[attr];
+
+    return (
+      <div style={{ marginBottom: 20, borderBottom: '1px solid #eee', paddingBottom: 15 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <span style={{ fontWeight: 'bold' }}>{label}</span>
+          <span style={{ color: '#1677ff', fontWeight: 'bold' }}>{finalPreview}</span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* Min & - 按鈕 */}
+          <Button size="mini" style={{ fontSize: '12px' }} onClick={() => handlePointChange(attr, 0, maxVal)}>Min</Button>
+          <Button
+            size="mini"
+            style={{ fontSize: '12px' }}
+            disabled={addedPoints <= 0}
+            onClick={() => handlePointChange(attr, addedPoints - 1, maxVal)}
+          >
+            <MinusOutline />
+          </Button>
+
+          {/* 輸入框 */}
+          <div style={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            background: '#fff',
+            padding: '0 4px'
+          }}>
+            <Input
+              className='custom-input'
+              type="number"
+              value={addedPoints === 0 ? '' : addedPoints.toString()}
+              placeholder="0"
+              onChange={(val) => handlePointChange(attr, parseInt(val) || 0, maxVal)}
+              style={{ '--font-size': '14px', textAlign: 'center' }}
+            />
+          </div>
+
+          {/* + & Max 按鈕 */}
+          <Button
+            size="mini"
+            style={{ fontSize: '12px' }}
+            disabled={tempPoints <= 0}
+            onClick={() => handlePointChange(attr, addedPoints + 1, maxVal)}
+          >
+            <AddOutline />
+          </Button>
+          <Button
+            size="mini"
+            style={{ fontSize: '12px' }}
+            color="primary"
+            onClick={() => handlePointChange(attr, 9999, maxVal)}
+          >
+            Max
+          </Button>
+        </div>
       </div>
-      <Space>
-        <Button size="mini" onClick={() => handleMin(attr)}>Min</Button>
-        <Button size="mini" onClick={() => handleDecrease(attr)}>-</Button>
-        <Button size="mini" onClick={() => handleIncrease(attr)}
-          disabled={tempPoints <= 0 || (maxVal !== undefined && tempAttributes[attr] >= maxVal)}>
-          +
-        </Button>
-        <Button size="mini" color="primary" onClick={() => handleMax(attr)}
-          disabled={tempPoints <= 0 || (maxVal !== undefined && tempAttributes[attr] >= maxVal)}>
-          Max
-        </Button>
-      </Space>
-    </div>
-  );
+    );
+  };
 
   return (
     <Dialog
       visible={visible}
-      title="屬性分配"
+      title="調整屬性配點"
       content={
-        <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 20, fontSize: 16 }}>
-            可用點數: <span style={{ color: '#ff4d4f', fontWeight: 'bold' }}>{tempPoints}</span>
+        <>
+          <div style={{
+            textAlign: 'center', padding: '12px', background: '#f0f7ff', borderRadius: '8px', marginBottom: 20
+          }}>
+            <div style={{ fontSize: 12, color: '#666' }}>可用配點</div>
+            <div style={{ fontSize: 28, color: '#1677ff', fontWeight: 'bold' }}>{tempPoints}</div>
           </div>
+
           {renderAttrRow("生命加成", "health")}
           {renderAttrRow("攻擊力", "attack")}
-          {renderAttrRow("暴擊率", "critRate", true, 0.40)}
-          {renderAttrRow("暴擊傷害", "critDamage", true)}
+          {/* {renderAttrRow("暴擊率", "critRate", true, 0.40)} */}
+          {/* {renderAttrRow("暴擊傷害", "critDamage", true)} */}
           {renderAttrRow("防禦力", "defense")}
-        </div>
+        </>
       }
       actions={[
-        { key: 'confirm', text: '確認保存', bold: true, onClick: handleConfirm },
-        { key: 'cancel', text: '取消修改', onClick: handleCancel },
+        { key: 'confirm', text: '確認', bold: true, onClick: handleConfirm },
+        { key: 'cancel', text: '取消', onClick: onClose },
       ]}
     />
   );

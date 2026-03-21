@@ -129,6 +129,8 @@ export interface Equipment {
     critDamage?: number;
     defense?: number;
   };
+  mainStat?: { key: keyof Equipment['stats']; value: number };
+  subStats?: Array<{ key: keyof Equipment['stats']; value: number }>;
   name: string;
 }
 
