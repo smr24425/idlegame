@@ -47,7 +47,7 @@ export const CharacterScreen: React.FC<CharacterScreenProps> = ({ player, invent
       const equipVal = stats[`equip${capitalize(statKey)}`] || 0;
       // @ts-ignore
       const artifactVal = stats[`artifact${capitalize(statKey)}`] || 0;
-      
+
       return (
         <span>
           {(stats[statKey] * 100).toFixed(1)}% (
@@ -343,9 +343,10 @@ export const CharacterScreen: React.FC<CharacterScreenProps> = ({ player, invent
                     </div>
                     {player.slotLevels[slot.type] > 0 && (
                       <div style={{ position: 'absolute', bottom: '0', background: 'rgba(0,0,0,0.8)', width: '100%', textAlign: 'center', fontSize: '11px', color: '#4CAF50', fontWeight: 'bold', borderTop: '1px solid rgba(76, 175, 80, 0.5)' }}>
-                        強化 +{player.slotLevels[slot.type]}
+                        強化 +{player.rebirths ? player.slotLevels[slot.type] + player.rebirths * 100 : player.slotLevels[slot.type]}
                       </div>
                     )}
+
                   </div>
                 );
               })}
@@ -496,6 +497,11 @@ export const CharacterScreen: React.FC<CharacterScreenProps> = ({ player, invent
                           {preview.totalStonesSpent > 0 && <p style={{ margin: '5px 0', color: '#FF9800', fontWeight: 'bold', fontSize: '16px' }}>{getItemConfig('upgrade_stone').icon} <FormattedNumber value={preview.totalStonesSpent} /> {getItemConfig('upgrade_stone').name}</p>}
                         </div>
                       </>
+                    ) : preview.isMaxedOut ? (
+                      <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                        <p style={{ color: '#F44336', fontSize: '16px', fontWeight: 'bold', marginBottom: '10px' }}>無法進行自動強化！</p>
+                        <p style={{ margin: '5px 0', color: 'var(--text)', fontSize: '14px' }}>所有欄位都已達到最大等級！</p>
+                      </div>
                     ) : (
                       <div style={{ textAlign: 'center', padding: '20px 0' }}>
                         <p style={{ color: '#F44336', fontSize: '16px', fontWeight: 'bold', marginBottom: '10px' }}>無法進行自動強化！</p>

@@ -110,7 +110,7 @@ export const PET_CONFIGS: PetConfig[] = [
   { id: 'gargoyle_imp', name: '石像小鬼', effectType: 'defensePercentage', baseValue: 0.1, passiveType: 'defensePercentage', passiveBaseValue: 0.01, description: '堅硬的外皮是主人最強的後盾。', rarity: 'SR' },
   { id: 'holy_unicorn', name: '神聖獨角獸', effectType: 'defensePercentage', baseValue: 0.1, passiveType: 'healthPercentage', passiveBaseValue: 0.01, description: '淨化氣息，提升主人抵禦傷害的能力。', rarity: 'SR' },
   { id: 'time_dragon', name: '時序幻龍', effectType: 'dualResource', baseValue: 0.5, passiveType: 'attackPercentage', passiveBaseValue: 0.03, description: '扭曲時序，出戰時經驗與金幣雙重巨量提升。', rarity: 'SSR' },
-  { id: 'nirvana_phoenix', name: '不滅涅槃凰', effectType: 'healthPercentage', baseValue: 0.3, passiveType: 'defensePercentage', passiveBaseValue: 0.03, description: '出戰時在首領戰綻放涅槃之火，每3回合回復大量生命。', rarity: 'SSR', combatSkill: { type: 'heal', triggerTurn: 3, triggerCondition: 'boss', basePercent: 0.1, levelPercent: 0.01 } }
+  { id: 'nirvana_phoenix', name: '不滅涅槃凰', effectType: 'healthPercentage', baseValue: 0.3, passiveType: 'defensePercentage', passiveBaseValue: 0.03, description: '出戰時在首領戰綻放涅槃之火，每3回合回復大量生命。', rarity: 'SSR', combatSkill: { type: 'heal', triggerTurn: 3, triggerCondition: 'boss', basePercent: 0.1, levelPercent: 0.03 } }
 ];
 
 export const getActivePetBonus = (player: Player, effectType: PetEffectType): number => {
@@ -156,9 +156,12 @@ export const getEnhancedStat = (eq: Equipment | null, slotLevel: number, statKey
     ring: 'critDamage',
     necklace: 'attack'
   };
+  //每次重生裝備欄位等級提升100等
+  const rebirthSlotLevel = 100 * (player?.rebirths || 0);
 
+  const totalSlotLevel = slotLevel + rebirthSlotLevel;
   const isMainStat = mainStats[eq.type] === statKey;
-  const multiplier = isMainStat ? (1 + slotLevel * (0.01 + artifactBonus)) : 1;
+  const multiplier = isMainStat ? (1 + totalSlotLevel * (0.01 + artifactBonus)) : 1;
 
   const baseStat = eq.stats[statKey]!;
   if (statKey === 'critRate' || statKey === 'critDamage') {
@@ -183,12 +186,14 @@ export const calculateAutoEnhance = (player: Player, inventoryStones: number) =>
     let minSlot: typeof slots[number] | null = null;
 
     for (const slot of slots) {
-      if (slotLevels[slot] < minLevel) {
+      // 修改點 1：除了找最低等級，還必須確保該部位低於玩家等級
+      if (slotLevels[slot] < minLevel && slotLevels[slot] < player.level) {
         minLevel = slotLevels[slot];
         minSlot = slot;
       }
     }
 
+    // 修改點 2：如果找不到 minSlot，代表「所有部位都已滿等」或「資源用盡」
     if (!minSlot) break;
 
     const { gold, stones } = getEnhanceCost(slotLevels[minSlot], player);
@@ -201,24 +206,36 @@ export const calculateAutoEnhance = (player: Player, inventoryStones: number) =>
       slotLevels[minSlot]++;
       canUpgradeAny = true;
     } else {
+      // 資源不足，停止強化
       break;
     }
   }
 
+  // 計算缺少資源的提示邏輯
   let missingGold = 0;
   let missingStones = 0;
+  let isMaxedOut = false; // 新增：用來判斷是否是因為「等級全滿」才無法強化
+
   if (!canUpgradeAny) {
     let minLevel = Infinity;
-    let minSlot: typeof slots[number] = 'weapon'; // Initialize to a valid slot
+    let minSlot: typeof slots[number] | null = null;
+
     for (const slot of slots) {
       if (slotLevels[slot] < minLevel) {
         minLevel = slotLevels[slot];
         minSlot = slot;
       }
     }
-    const { gold, stones } = getEnhanceCost(slotLevels[minSlot], player);
-    if (remainingGold < gold) missingGold = gold - remainingGold;
-    if (remainingStones < stones) missingStones = stones - remainingStones;
+
+    // 如果最低等級已經等於玩家等級，代表真的滿了
+    if (minSlot && slotLevels[minSlot] >= player.level) {
+      isMaxedOut = true;
+    } else if (minSlot) {
+      // 否則才是真的缺少資源
+      const { gold, stones } = getEnhanceCost(slotLevels[minSlot], player);
+      if (remainingGold < gold) missingGold = gold - remainingGold;
+      if (remainingStones < stones) missingStones = stones - remainingStones;
+    }
   }
 
   return {
@@ -235,7 +252,8 @@ export const calculateAutoEnhance = (player: Player, inventoryStones: number) =>
     canUpgradeAny,
     missingGold,
     missingStones,
-    finalLevels: slotLevels
+    finalLevels: slotLevels,
+    isMaxedOut // 回傳這個標記，讓 UI 可以顯示「已達等級上限」
   };
 };
 
@@ -275,13 +293,23 @@ export const getGlobalPetPassiveStats = (player: Player) => {
   Object.values(player.pets).forEach(pet => {
     const config = PET_CONFIGS.find(c => c.id === pet.configId);
     if (!config) return;
-
     // Apply the Pokedex combat stat passive scaling unconditionally based on `passiveType`!
     const effectiveValue = config.passiveBaseValue * (1 + pet.level);
 
     if (config.passiveType === 'healthPercentage') hpPercent += effectiveValue;
     else if (config.passiveType === 'attackPercentage') atkPercent += effectiveValue;
     else if (config.passiveType === 'defensePercentage') defPercent += effectiveValue;
+
+    //寵物主動效果
+    if (config.id === player.equippedPetId && config.effectType === 'attackPercentage') {
+      atkPercent += effectiveValue;
+    }
+    if (config.id === player.equippedPetId && config.effectType === 'healthPercentage') {
+      hpPercent += effectiveValue;
+    }
+    if (config.id === player.equippedPetId && config.effectType === 'defensePercentage') {
+      defPercent += effectiveValue;
+    }
   });
 
   return { hpPercent, atkPercent, defPercent };

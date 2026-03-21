@@ -41,10 +41,12 @@ export const AuthScreen: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', padding: '20px' }}>
-      <h1 style={{ color: '#FFD700', textShadow: '0 0 10px rgba(255,215,0,0.5)', marginBottom: '30px', fontSize: '32px' }}>
+      <div style={{ color: '#FFD700', textShadow: '0 0 10px rgba(255,215,0,0.5)', fontSize: '32px' }}>
         掛機谷
-      </h1>
-
+      </div>
+      <p style={{ color: '#FFF', marginBottom: '30px' }}>
+        當前版本: {__APP_VERSION__}
+      </p>
       <Card style={{ width: '100%', maxWidth: '400px', background: 'rgba(0,0,0,0.8)', border: '1px solid #FFD700' }}>
         <h2 style={{ color: '#FFF', textAlign: 'center', marginBottom: '20px' }}>
           {isLogin ? '登入帳號' : '註冊新帳號'}

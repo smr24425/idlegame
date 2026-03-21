@@ -128,11 +128,10 @@ export const StartScreen: React.FC<StartScreenProps> = ({ userEmail, isSyncing, 
       </div>
 
       {/* Game Title */}
-      <h1
+      <div
         style={{
           fontSize: "3rem",
           fontWeight: "bold",
-          marginBottom: "2rem",
           textShadow:
             "0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.6)",
           zIndex: 1,
@@ -140,8 +139,10 @@ export const StartScreen: React.FC<StartScreenProps> = ({ userEmail, isSyncing, 
         }}
       >
         掛機谷
-      </h1>
-
+      </div>
+      <p style={{ color: '#FFF', marginBottom: '30px' }}>
+        當前版本: {__APP_VERSION__}
+      </p>
       {/* Top right Logout */}
       {userEmail && (
         <div style={{ position: 'absolute', top: 20, right: 20, zIndex: 10 }}>

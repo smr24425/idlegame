@@ -37,6 +37,7 @@ export const RebirthScreen: React.FC<RebirthScreenProps> = ({ gameState, onRebir
           <p>🛡️ 總防禦加成: +{rebirths * 20}%</p>
           <p>🎯 額外暴擊率: +{(rebirths * 1).toFixed(1)}%</p>
           <p>💥 額外暴擊傷害: +{(rebirths * 50).toFixed(1)}%</p>
+          <p>⚔️ 裝備欄位等級提升: +{rebirths * 100}</p>
         </div>
       </Card>
 
@@ -49,6 +50,9 @@ export const RebirthScreen: React.FC<RebirthScreenProps> = ({ gameState, onRebir
         </p>
         <p style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '15px' }}>
           * 重生後將獲得各基礎屬性 +20%、暴擊率 +1%、暴擊傷害 +50% 的永久加成。
+        </p>
+        <p style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '15px' }}>
+          * 重生後將獲得裝備欄位等級 +100。
         </p>
 
         <Button
