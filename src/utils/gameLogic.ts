@@ -161,12 +161,8 @@ export const getEnhancedStat = (eq: Equipment | null, slotLevel: number, statKey
   const multiplier = isMainStat ? (1 + slotLevel * (0.01 + artifactBonus)) : 1;
 
   const baseStat = eq.stats[statKey]!;
-  if (statKey === 'critRate') {
+  if (statKey === 'critRate' || statKey === 'critDamage') {
     return baseStat * multiplier;
-  }
-  if (statKey === 'critDamage') {
-    // 暴擊傷害是加法
-    return baseStat + multiplier;
   }
   return Math.floor(baseStat * multiplier);
 };

@@ -124,7 +124,7 @@ export const useGameState = () => {
     let petStonesGained = 0;
 
     for (let i = 0; i < minutes; i++) {
-      const eq = generateEquipment(gameState.player.stage, 1, dropRateBonus); // 100% chance per minute
+      const eq = generateEquipment(gameState.player.level, 1, dropRateBonus);
       if (eq) equipments.push(eq);
 
       // Chance to drop stones natively

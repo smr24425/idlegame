@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from 'react';
 import { GameState } from '../types/game';
 import { Button, Card, Switch } from 'antd-mobile';
 import { getActivePetBonus } from '../utils/gameLogic';
@@ -11,7 +12,27 @@ interface MainScreenProps {
   setAutoChallenge: (val: boolean) => void;
 }
 
-export const MainScreen: React.FC<MainScreenProps> = ({ gameState, onCollect, onChallengeBoss, autoChallenge, setAutoChallenge }) => {
+export const MainScreen: React.FC<MainScreenProps> = ({
+  gameState,
+  onCollect,
+  onChallengeBoss,
+  autoChallenge,
+  setAutoChallenge
+}) => {
+  // --- 新增：強制每秒更新畫面的 State ---
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    // 每 1000 毫秒 (1秒) 更新一次 state，觸發重新渲染
+    const timer = setInterval(() => {
+      setTick(t => t + 1);
+    }, 1000);
+
+    // 組件卸載時清除計時器，避免記憶體洩漏
+    return () => clearInterval(timer);
+  }, []);
+  // ------------------------------------
+
   const expBonus = getActivePetBonus(gameState.player, 'expGain');
   const goldBonus = getActivePetBonus(gameState.player, 'goldGain');
 
@@ -21,7 +42,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({ gameState, onCollect, on
   const moneyTotal = moneyPerSecond * (1 + goldBonus);
 
   const timeDiff = Math.floor((Date.now() - gameState.lastCollectTime) / 1000);
-  const canCollect = timeDiff >= 60; // At least 1 minute
+  const canCollect = timeDiff >= 60; // 滿 60 秒才可領取
 
   return (
     <div style={{ padding: '20px' }}>
@@ -42,7 +63,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({ gameState, onCollect, on
           }}
           disabled={!canCollect}
         >
-          獲得經驗 ({Math.floor(timeDiff / 60)}分{timeDiff % 60}秒)
+          領取經驗 ({Math.floor(timeDiff / 60)}分{timeDiff % 60}秒)
         </Button>
         <Button
           color="danger"
@@ -58,14 +79,14 @@ export const MainScreen: React.FC<MainScreenProps> = ({ gameState, onCollect, on
         </Button>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 15, padding: '0 10px' }}>
           <span style={{ color: 'var(--text)', fontWeight: 'bold' }}>打贏後自動挑戰下一關</span>
-          <Switch 
-            checked={autoChallenge} 
-            onChange={setAutoChallenge} 
+          <Switch
+            checked={autoChallenge}
+            onChange={setAutoChallenge}
             style={{
               '--checked-color': '#4CAF50',
               '--height': '24px',
               '--width': '42px',
-            }} 
+            }}
           />
         </div>
       </Card>
