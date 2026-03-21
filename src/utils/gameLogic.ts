@@ -402,6 +402,8 @@ export const getTotalStats = (player: Player) => {
     defense: Math.floor(totalDefense),
     critRate: totalCrit,
     critDamage: totalCritDmg,
+    baseHealth,
+    baseAttack,
     baseDefense,
     equipHealth,
     equipAttack,
