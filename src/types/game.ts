@@ -26,35 +26,35 @@ export interface PlayerPet {
   duplicates: number;
 }
 
-export type ArtifactEffectType = 
-  | 'enhanceCostReduction' 
-  | 'baseAttack' 
-  | 'baseDefense' 
-  | 'baseHealth' 
-  | 'critDamage' 
-  | 'critRate' 
-  | 'expGain' 
-  | 'goldGain' 
-  | 'attackGreaterThanDefenseCritDmg' 
-  | 'upgradeStoneDropRate' 
-  | 'lowHealthDefense' 
-  | 'gachaCostReduction' 
-  | 'petStoneDropRate' 
-  | 'highLevelBossDamage' 
-  | 'turnHealthRegen' 
-  | 'defenseUpHealthDown' 
+export type ArtifactEffectType =
+  | 'enhanceCostReduction'
+  | 'baseAttack'
+  | 'baseDefense'
+  | 'baseHealth'
+  | 'critDamage'
+  | 'critRate'
+  | 'expGain'
+  | 'goldGain'
+  | 'attackGreaterThanDefenseCritDmg'
+  | 'upgradeStoneDropRate'
+  | 'lowHealthDefense'
+  | 'gachaCostReduction'
+  | 'petStoneDropRate'
+  | 'highLevelBossDamage'
+  | 'turnHealthRegen'
+  | 'defenseUpHealthDown'
   | 'dodgeRate'
-  | 'halfHealthAttackUp' 
-  | 'hpToDefense' 
-  | 'bossHighRarityDrop' 
-  | 'dodgeDamageBoost' 
-  | 'totalHealthMultiplier' 
-  | 'doubleAttackChance' 
-  | 'goldToAttack' 
-  | 'damageReflect' 
-  | 'finalDamageMultiplier' 
-  | 'gachaHighRarityBoost' 
-  | 'highHealthAttackUp' 
+  | 'halfHealthAttackUp'
+  | 'hpToDefense'
+  | 'bossHighRarityDrop'
+  | 'dodgeDamageBoost'
+  | 'totalHealthMultiplier'
+  | 'doubleAttackChance'
+  | 'goldToAttack'
+  | 'damageReflect'
+  | 'finalDamageMultiplier'
+  | 'gachaHighRarityBoost'
+  | 'highHealthAttackUp'
   | 'enhanceSlotBonusIncrease';
 
 export interface ArtifactConfig {
@@ -88,7 +88,7 @@ export interface Player {
   artifacts: Record<string, PlayerArtifact>;
   equippedArtifactIds: string[];
   stage: number;
-  rebirths?: number;
+  rebirths: number;
   attributes: {
     health: number; // 生命加成，影響最大生命
     attack: number; // 攻擊力

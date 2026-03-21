@@ -464,11 +464,6 @@ function App() {
           }
           actions={[
             {
-              key: 'cancel',
-              text: '取消',
-              onClick: () => setExchangeModalVisible(false),
-            },
-            {
               key: 'ok',
               text: '兌換',
               bold: true,
@@ -486,7 +481,12 @@ function App() {
                 Toast.show('兌換成功！');
                 setExchangeModalVisible(false);
               }
-            }
+            },
+            {
+              key: 'cancel',
+              text: '取消',
+              onClick: () => setExchangeModalVisible(false),
+            },
           ]}
         />
       </div>

@@ -41,6 +41,7 @@ const initialPlayer: Player = {
     ring: 0,
     necklace: 0,
   },
+  rebirths: 0,
 };
 
 export const useGameState = () => {
@@ -948,7 +949,9 @@ export const useGameState = () => {
 
   const doRebirth = () => {
     setGameState(prev => {
-      if (prev.player.level < 2000) return prev;
+      //每重生一次多500等才能再次重生
+      const nextRebirthLevel = 2000 + (prev.player.rebirths * 500);
+      if (prev.player.level < nextRebirthLevel) return prev;
       return {
         ...prev,
         player: {
@@ -957,7 +960,7 @@ export const useGameState = () => {
           stage: 1,
           exp: 0,
           expToNext: getExpToNextLevel(1),
-          rebirths: (prev.player.rebirths || 0) + 1,
+          rebirths: prev.player.rebirths + 1,
           attributes: {
             health: 1,
             attack: 5,

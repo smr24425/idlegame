@@ -10,7 +10,7 @@ export const RebirthScreen: React.FC<RebirthScreenProps> = ({ gameState, onRebir
   const { player } = gameState;
   const rebirths = player.rebirths || 0;
 
-  const canRebirth = player.level >= 2000;
+  const canRebirth = player.level >= 2000 + (rebirths * 500);
 
   const handleRebirthClick = () => {
     Dialog.confirm({
@@ -43,10 +43,10 @@ export const RebirthScreen: React.FC<RebirthScreenProps> = ({ gameState, onRebir
 
       <Card title="進行重生" style={{ background: 'var(--card-bg)', color: 'white', marginTop: '20px' }}>
         <p style={{ textAlign: 'center', color: canRebirth ? '#4CAF50' : '#F44336', fontWeight: 'bold' }}>
-          重生條件: 達到 2000 等級
+          重生條件: 達到 {2000 + (rebirths * 500)} 等級
         </p>
         <p style={{ textAlign: 'center', margin: '10px 0' }}>
-          目前等級: {player.level} / 2000
+          目前等級: {player.level} / {2000 + (rebirths * 500)}
         </p>
         <p style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '15px' }}>
           * 重生後將獲得各基礎屬性 +20%、暴擊率 +1%、暴擊傷害 +50% 的永久加成。
