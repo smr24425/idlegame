@@ -295,6 +295,7 @@ export const getGlobalPetPassiveStats = (player: Player) => {
     if (!config) return;
     // Apply the Pokedex combat stat passive scaling unconditionally based on `passiveType`!
     const effectiveValue = config.passiveBaseValue * (1 + pet.level);
+    const baseValue = config.baseValue * (1 + pet.level);
 
     if (config.passiveType === 'healthPercentage') hpPercent += effectiveValue;
     else if (config.passiveType === 'attackPercentage') atkPercent += effectiveValue;
@@ -302,13 +303,14 @@ export const getGlobalPetPassiveStats = (player: Player) => {
 
     //寵物主動效果
     if (config.id === player.equippedPetId && config.effectType === 'attackPercentage') {
-      atkPercent += effectiveValue;
+      atkPercent += baseValue;
     }
     if (config.id === player.equippedPetId && config.effectType === 'healthPercentage') {
-      hpPercent += effectiveValue;
+      hpPercent += baseValue;
+
     }
     if (config.id === player.equippedPetId && config.effectType === 'defensePercentage') {
-      defPercent += effectiveValue;
+      defPercent += baseValue;
     }
   });
 
@@ -439,6 +441,7 @@ export const getTotalStats = (player: Player) => {
     petSlotHealth,
     petSlotAttack,
     petHealthBuff,
+    petAttackBuff,
     petDefenseBuff,
 
     rebirthHealthBonus,
