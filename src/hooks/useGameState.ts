@@ -974,6 +974,14 @@ export const useGameState = () => {
           equipment: {
             weapon: null, armor: null, pants: null, gloves: null, ring: null, necklace: null
           },
+          slotLevels: {
+            weapon: 1,
+            armor: 1,
+            pants: 1,
+            gloves: 1,
+            ring: 1,
+            necklace: 1
+          },
         },
         inventory: {
           ...prev.inventory,

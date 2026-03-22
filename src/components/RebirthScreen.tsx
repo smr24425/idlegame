@@ -14,7 +14,7 @@ export const RebirthScreen: React.FC<RebirthScreenProps> = ({ gameState, onRebir
 
   const handleRebirthClick = () => {
     Dialog.confirm({
-      content: '確定要進行重生嗎？這將重置你的等級、關卡與所有裝備，但保留金錢、鑽石與寵物、神器等物品，並獲得永久能力加成！',
+      content: '確定要進行重生嗎？只保留金錢、鑽石與寵物、神器等物品，其餘將會重置，並獲得永久能力加成！',
       onConfirm: async () => {
         onRebirth();
       },
