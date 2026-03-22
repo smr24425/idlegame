@@ -752,3 +752,11 @@ export const formatNumber = (num: number): string => {
   if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
   return Math.floor(num).toString();
 };
+
+//獲取重生掛機經驗和金錢加成,每次+100%
+export const getRebirthBonus = (player: Player) => {
+  const rebirths = player.rebirths;
+  const expBonus = rebirths * 1;
+  const goldBonus = rebirths * 1;
+  return { expBonus, goldBonus };
+};

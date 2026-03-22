@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { GameState } from '../types/game';
 import { Button, Card, Switch } from 'antd-mobile';
-import { getActivePetBonus } from '../utils/gameLogic';
+import { getActivePetBonus, getRebirthBonus } from '../utils/gameLogic';
 import { FormattedNumber } from './FormattedNumber';
 
 interface MainScreenProps {
@@ -33,13 +33,18 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   }, []);
   // ------------------------------------
 
+  //寵物加成
   const expBonus = getActivePetBonus(gameState.player, 'expGain');
   const goldBonus = getActivePetBonus(gameState.player, 'goldGain');
 
+  //重生加成
+  const rebirthExpBonus = getRebirthBonus(gameState.player).expBonus;
+  const rebirthGoldBonus = getRebirthBonus(gameState.player).goldBonus;
+
   const expPerSecond = gameState.player.stage * 10;
-  const expTotal = expPerSecond * (1 + expBonus);
+  const expTotal = expPerSecond * (1 + expBonus + rebirthExpBonus);
   const moneyPerSecond = gameState.player.stage * 5;
-  const moneyTotal = moneyPerSecond * (1 + goldBonus);
+  const moneyTotal = moneyPerSecond * (1 + goldBonus + rebirthGoldBonus);
 
   const timeDiff = Math.floor((Date.now() - gameState.lastCollectTime) / 1000);
   const canCollect = timeDiff >= 60; // 滿 60 秒才可領取
@@ -47,8 +52,8 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   return (
     <div style={{ padding: '20px' }}>
       <Card title="收益" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', boxShadow: 'var(--shadow)', color: 'var(--text)' }}>
-        <p>經驗/秒: <FormattedNumber value={expPerSecond} />{expBonus > 0 ? <span> (+{Math.round(expBonus * 100)}%) = <FormattedNumber value={expTotal} /></span> : ''}</p>
-        <p>金錢/秒: <FormattedNumber value={moneyPerSecond} />{goldBonus > 0 ? <span> (+{Math.round(goldBonus * 100)}%) = <FormattedNumber value={moneyTotal} /></span> : ''}</p>
+        <p>經驗/秒: <FormattedNumber value={expPerSecond} />{expBonus > 0 ? <span> (寵物+{Math.round(expBonus * 100)}%)</span> : ''} {rebirthExpBonus > 0 ? <span> (重生+{Math.round(rebirthExpBonus * 100)}%)</span> : ''} = <FormattedNumber value={expTotal} /></p>
+        <p>金錢/秒: <FormattedNumber value={moneyPerSecond} />{goldBonus > 0 ? <span> (寵物+{Math.round(goldBonus * 100)}%)</span> : ''} {rebirthGoldBonus > 0 ? <span> (重生+{Math.round(rebirthGoldBonus * 100)}%)</span> : ''} = <FormattedNumber value={moneyTotal} /></p>
       </Card>
       <Card title="主畫面" style={{ marginTop: '16px', background: 'var(--card-bg)', border: '1px solid var(--card-border)', boxShadow: 'var(--shadow)', color: 'var(--text)' }}>
         <Button

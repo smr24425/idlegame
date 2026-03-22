@@ -38,6 +38,7 @@ export const RebirthScreen: React.FC<RebirthScreenProps> = ({ gameState, onRebir
           <p>🎯 額外暴擊率: +{(rebirths * 1).toFixed(1)}%</p>
           <p>💥 額外暴擊傷害: +{(rebirths * 50).toFixed(1)}%</p>
           <p>⚔️ 裝備欄位等級提升: +{rebirths * 100}</p>
+          <p>⚔️ 經驗加成和金錢加成 +{rebirths * 100}%</p>
         </div>
       </Card>
 
@@ -53,6 +54,9 @@ export const RebirthScreen: React.FC<RebirthScreenProps> = ({ gameState, onRebir
         </p>
         <p style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '15px' }}>
           * 重生後將獲得裝備欄位等級 +100。
+        </p>
+        <p style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '15px' }}>
+          * 重生後將獲得經驗加成和金錢加成 +100%。
         </p>
 
         <Button

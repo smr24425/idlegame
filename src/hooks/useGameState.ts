@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { GameState, Player, Equipment } from '../types/game';
-import { getExpToNextLevel, generateBoss, generateEquipment, getEquipmentValue, generateGachaEquipment, getSalvageStones, getEnhanceCost, calculateAutoEnhance, calculateBulkPetSlotUpgrade, getActivePetBonus, PET_CONFIGS, PET_UPGRADE_COSTS, getTotalStats, getItemConfig, getArtifactEffectValue, ARTIFACT_CONFIGS, getArtifactUpgradeCost } from '../utils/gameLogic';
+import { getExpToNextLevel, generateBoss, generateEquipment, getEquipmentValue, generateGachaEquipment, getSalvageStones, getEnhanceCost, calculateAutoEnhance, calculateBulkPetSlotUpgrade, getActivePetBonus, PET_CONFIGS, PET_UPGRADE_COSTS, getTotalStats, getItemConfig, getArtifactEffectValue, ARTIFACT_CONFIGS, getArtifactUpgradeCost, getRebirthBonus } from '../utils/gameLogic';
 
 const initialPlayer: Player = {
   level: 1,
@@ -114,9 +114,14 @@ export const useGameState = () => {
     const artifactUpgradeDropRate = getArtifactEffectValue(gameState.player, 'upgradeStoneDropRate');
     const artifactPetStoneDropRate = getArtifactEffectValue(gameState.player, 'petStoneDropRate');
 
+    //重生經驗加成
+    const rebirthBonus = getRebirthBonus(gameState.player);
+    const rebirthExpBonus = rebirthBonus.expBonus;
+    const rebirthGoldBonus = rebirthBonus.goldBonus;
+
     // 每秒獲得的經驗 / 金錢會根據當前關卡上升
-    const expGained = timeDiff * gameState.player.stage * 10 * (1 + expBonus + artifactExpBonus); // per second
-    const moneyGained = timeDiff * gameState.player.stage * 5 * (1 + goldBonus + artifactGoldBonus);
+    const expGained = timeDiff * gameState.player.stage * 10 * (1 + expBonus + artifactExpBonus + rebirthExpBonus); // per second
+    const moneyGained = timeDiff * gameState.player.stage * 5 * (1 + goldBonus + artifactGoldBonus + rebirthGoldBonus);
     // 每 60 秒掉一件裝備
     const minutes = Math.floor(timeDiff / 60);
     const equipments: Equipment[] = [];
