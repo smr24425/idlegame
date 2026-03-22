@@ -482,7 +482,8 @@ export const useGameState = () => {
     }));
   };
 
-  const drawGacha = (times: number): { success: boolean, equipments: Equipment[] } => {
+  // 抽裝備,新增自動賣出紅色裝備以下功能
+  const drawGacha = (times: number, isAutoSell: boolean): { success: boolean, equipments: Equipment[], totalGainGold?: number } => {
     const costReduction = getArtifactEffectValue(gameState.player, 'gachaCostReduction');
     const highRarityBoost = getArtifactEffectValue(gameState.player, 'gachaHighRarityBoost');
 
@@ -491,9 +492,28 @@ export const useGameState = () => {
       return { success: false, equipments: [] };
     }
 
-    const newEquipments: Equipment[] = [];
+    let newEquipments: Equipment[] = [];
     for (let i = 0; i < times; i++) {
       newEquipments.push(generateGachaEquipment(gameState.player.level, highRarityBoost));
+    }
+
+    // 自動賣出紅色裝備以下功能
+    if (isAutoSell) {
+      const toSell = newEquipments.filter(eq => ['white', 'green', 'blue', 'purple', 'gold'].includes(eq.rarity));
+      newEquipments = newEquipments.filter(eq => !toSell.includes(eq));
+      const totalGainGold = toSell.reduce((sum, item) => sum + getEquipmentValue(item), 0);
+      setGameState(prev => ({
+        ...prev,
+        player: {
+          ...prev.player,
+          money: prev.player.money + totalGainGold,
+        },
+        inventory: {
+          ...prev.inventory,
+          equipment: [...prev.inventory.equipment, ...newEquipments],
+        },
+      }));
+      return { success: true, equipments: newEquipments, totalGainGold: totalGainGold };
     }
 
     setGameState(prev => ({

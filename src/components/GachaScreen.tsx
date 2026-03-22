@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { GameState, Equipment } from '../types/game';
-import { Card, Button, Dialog } from 'antd-mobile';
+import { Card, Button, Dialog, Switch } from 'antd-mobile';
 import { FormattedNumber } from './FormattedNumber';
 import { getItemConfig } from '../utils/gameLogic';
 
 interface GachaScreenProps {
   gameState: GameState;
-  onDraw: (times: number) => { success: boolean; equipments: Equipment[] };
+  onDraw: (times: number, isAutoSell: boolean) => { success: boolean; equipments: Equipment[]; totalGainGold?: number };
   onDrawPet: (times: number) => { success: boolean; results: any[], message: string };
   onDrawArtifact: (times: number) => { success: boolean; results: any[], message: string };
 }
@@ -23,9 +23,11 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
   const [resultArtifacts, setResultArtifacts] = useState<any[]>([]);
   const [artifactDialogVisible, setArtifactDialogVisible] = useState(false);
   const [lastArtifactDrawAmount, setLastArtifactDrawAmount] = useState<number>(1);
+  const [isAutoSell, setIsAutoSell] = useState(true);
+  const [totalGainGold, setTotalGainGold] = useState<number>(0);
 
   const handleDraw = (times: number) => {
-    const result = onDraw(times);
+    const result = onDraw(times, isAutoSell);
     if (!result.success) {
       Dialog.alert({
         title: '金錢不足',
@@ -37,6 +39,7 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
     setLastDrawAmount(times);
     setResultEquipments(result.equipments);
     setDialogVisible(true);
+    setTotalGainGold(result.totalGainGold || 0);
   };
 
   const handleDrawPet = (times: number) => {
@@ -92,6 +95,16 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
           每次抽卡花費 100 {getItemConfig('money').name}，獲得與當前等級相同的裝備！<br />
           有機率出現強力的 <span style={{ color: '#ff4444', fontWeight: 'bold' }}>紅色裝備</span>！
         </p>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%', marginBottom: '20px' }}>
+          <div style={{ color: 'var(--muted)', fontSize: '14px' }}>自動出售紅色以下裝備</div>
+          <Switch
+            aria-setsize={1}
+            checked={isAutoSell}
+            onChange={setIsAutoSell}
+            style={{ marginLeft: '10px' }}
+          />
+        </div>
 
         <Button
           block
@@ -188,7 +201,12 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
         onClose={() => setDialogVisible(false)}
         content={
           <div style={{ maxHeight: '300px', overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: '10px' }}>
-            {resultEquipments.map((eq, idx) => (
+            {totalGainGold > 0 && (
+              <div style={{ color: 'var(--muted)', textAlign: 'center', gridColumn: '1 / -1' }}>
+                獲得 {getItemConfig('money').icon} {totalGainGold}
+              </div>
+            )}
+            {resultEquipments.length > 0 ? resultEquipments.map((eq, idx) => (
               <div key={idx} style={{
                 border: `2px solid ${getBorderColor(eq.rarity)}`,
                 borderRadius: '8px',
@@ -200,7 +218,16 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
                 <div style={{ fontSize: '12px', color: 'var(--text)', fontWeight: 'bold' }}>{eq.name}</div>
                 <div style={{ fontSize: '10px', color: 'var(--muted)' }}>Lv {eq.level}</div>
               </div>
-            ))}
+            )) : <div style={{
+              visibility: 'hidden',
+              border: `2px solid`,
+              borderRadius: '8px',
+              padding: '5px',
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: '12px', color: 'var(--text)', fontWeight: 'bold' }}>空</div>
+              <div style={{ fontSize: '10px', color: 'var(--muted)' }}>空</div>
+            </div>}
           </div>
         }
         actions={[

@@ -12,6 +12,7 @@ interface InventoryScreenProps {
 }
 
 export const InventoryScreen: React.FC<InventoryScreenProps> = ({ gameState, onEquip, onSell, onBulkSell }) => {
+  const player = gameState.player;
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
   const [sellDialogVisible, setSellDialogVisible] = useState(false);
   const [sellFilters, setSellFilters] = useState<number[]>([]);
@@ -252,50 +253,94 @@ export const InventoryScreen: React.FC<InventoryScreenProps> = ({ gameState, onE
             </span>
           }
           content={
-            <div className="equipment-dialog-content" style={{ border: '2px solid ' + getBorderColor(selectedEquipment.rarity) }}>
-              <p style={{ margin: '8px 0', fontSize: '16px' }}>
-                <span style={{ color: '#FFD700' }}>部位:</span> {getTypeName(selectedEquipment.type)}
-              </p>
-              <p style={{ margin: '8px 0', fontSize: '16px' }}>
-                <span style={{ color: '#FFD700' }}>裝備等級:</span> Lv.{selectedEquipment.level}
-              </p>
-              <p style={{ margin: '8px 0', fontSize: '16px' }}>
-                <span style={{ color: getBorderColor(selectedEquipment.rarity) }}>稀有度:</span> {selectedEquipment.rarity}
-              </p>
-              {selectedEquipment.mainStat && (
-                <>
-                  <p style={{ margin: '8px 0 5px 0', fontSize: '16px', color: '#FFD700', fontWeight: 'bold' }}>◇ 主屬性:</p>
-                  <ul style={{ paddingLeft: '20px', margin: '5px 0' }}>
-                    <li key={selectedEquipment.mainStat.key}>
-                      {statNames[selectedEquipment.mainStat.key as keyof typeof statNames] || selectedEquipment.mainStat.key}: {formatStatValue(selectedEquipment.mainStat.key, selectedEquipment.mainStat.value)}
-                    </li>
-                  </ul>
-                </>
-              )}
-              {selectedEquipment.subStats && selectedEquipment.subStats.length > 0 ? (
-                <>
-                  <p style={{ margin: '8px 0 5px 0', fontSize: '16px', color: '#00E5FF' }}>◆ 附加屬性:</p>
-                  <ul style={{ paddingLeft: '20px', margin: '5px 0' }}>
-                    {selectedEquipment.subStats.map((sub, idx) => (
-                      <li key={idx}>
-                        {statNames[sub.key as keyof typeof statNames] || sub.key}: {formatStatValue(sub.key, sub.value)}
+            <div style={{ display: 'flex', gap: '16px' }}>
+              {/* 顯示當前穿戴裝備 */}
+              {player && player.equipment[selectedEquipment.type] && player.equipment[selectedEquipment.type]?.type === selectedEquipment.type && <div className="equipment-dialog-content" style={{ flex: 1, border: '2px solid ' + getBorderColor(player.equipment[selectedEquipment.type]!.rarity) }}>
+                <div style={{ fontSize: '16px', fontWeight: 'bold' }}>當前穿戴</div>
+                <p style={{ margin: '8px 0', fontSize: '16px' }}>
+                  <span style={{ color: '#FFD700' }}>部位:</span> {getTypeName(player.equipment[selectedEquipment.type]!.type)}
+                </p>
+                <p style={{ margin: '8px 0', fontSize: '16px' }}>
+                  <span style={{ color: '#FFD700' }}>裝備等級:</span> Lv.{player.equipment[selectedEquipment.type]!.level}
+                </p>
+                <p style={{ margin: '8px 0', fontSize: '16px' }}>
+                  <span style={{ color: getBorderColor(player.equipment[selectedEquipment.type]!.rarity) }}>稀有度:</span> {player.equipment[selectedEquipment.type]!.rarity}
+                </p>
+                {player.equipment[selectedEquipment.type]!.mainStat && (
+                  <>
+                    <p style={{ margin: '8px 0 5px 0', fontSize: '16px', color: '#FFD700', fontWeight: 'bold' }}>◇ 主屬性:</p>
+                    <ul style={{ paddingLeft: '20px', margin: '5px 0' }}>
+                      <li key={player.equipment[selectedEquipment.type]!.mainStat!.key}>
+                        {statNames[player.equipment[selectedEquipment.type]!.mainStat!.key as keyof typeof statNames] || player.equipment[selectedEquipment.type]!.mainStat!.key}: {formatStatValue(player.equipment[selectedEquipment.type]!.mainStat!.key, player.equipment[selectedEquipment.type]!.mainStat!.value)}
                       </li>
-                    ))}
-                  </ul>
-                </>
-              ) : !selectedEquipment.mainStat && (
-                <>
-                  <p style={{ margin: '8px 0 5px 0', fontSize: '16px', color: '#FFD700' }}>裝備基礎屬性:</p>
-                  <ul style={{ paddingLeft: '20px', margin: '5px 0' }}>
-                    {Object.entries(selectedEquipment.stats).map(([key, value]) => (
-                      <li key={key}>
-                        {statNames[key as keyof typeof statNames] || key}: {formatStatValue(key, value)}
+                    </ul>
+                  </>
+                )}
+                {player.equipment[selectedEquipment.type] && player.equipment[selectedEquipment.type]!.subStats && player.equipment[selectedEquipment.type]!.subStats!.length > 0 && (
+                  <>
+                    <p style={{ margin: '8px 0 5px 0', fontSize: '16px', color: '#00E5FF' }}>◆ 附加屬性:</p>
+                    <ul style={{ paddingLeft: '20px', margin: '5px 0' }}>
+                      {player.equipment[selectedEquipment.type]!.subStats!.map((sub, idx) => (
+                        <li key={idx}>
+                          {statNames[sub.key as keyof typeof statNames] || sub.key}: {formatStatValue(sub.key, sub.value)}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </div>}
+
+              {/* 顯示裝備資訊 */}
+              <div className="equipment-dialog-content" style={{ flex: 1, border: '2px solid ' + getBorderColor(selectedEquipment.rarity) }}>
+                <div style={{ fontSize: '16px', fontWeight: 'bold' }}>裝備</div>
+
+                <p style={{ margin: '8px 0', fontSize: '16px' }}>
+                  <span style={{ color: '#FFD700' }}>部位:</span> {getTypeName(selectedEquipment.type)}
+                </p>
+                <p style={{ margin: '8px 0', fontSize: '16px' }}>
+                  <span style={{ color: '#FFD700' }}>裝備等級:</span> Lv.{selectedEquipment.level}
+                </p>
+                <p style={{ margin: '8px 0', fontSize: '16px' }}>
+                  <span style={{ color: getBorderColor(selectedEquipment.rarity) }}>稀有度:</span> {selectedEquipment.rarity}
+                </p>
+                {selectedEquipment.mainStat && (
+                  <>
+                    <p style={{ margin: '8px 0 5px 0', fontSize: '16px', color: '#FFD700', fontWeight: 'bold' }}>◇ 主屬性:</p>
+                    <ul style={{ paddingLeft: '20px', margin: '5px 0' }}>
+                      <li key={selectedEquipment.mainStat.key}>
+                        {statNames[selectedEquipment.mainStat.key as keyof typeof statNames] || selectedEquipment.mainStat.key}: {formatStatValue(selectedEquipment.mainStat.key, selectedEquipment.mainStat.value)}
                       </li>
-                    ))}
-                  </ul>
-                </>
-              )}
+                    </ul>
+                  </>
+                )}
+                {selectedEquipment.subStats && selectedEquipment.subStats.length > 0 ? (
+                  <>
+                    <p style={{ margin: '8px 0 5px 0', fontSize: '16px', color: '#00E5FF' }}>◆ 附加屬性:</p>
+                    <ul style={{ paddingLeft: '20px', margin: '5px 0' }}>
+                      {selectedEquipment.subStats.map((sub, idx) => (
+                        <li key={idx}>
+                          {statNames[sub.key as keyof typeof statNames] || sub.key}: {formatStatValue(sub.key, sub.value)}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                ) : !selectedEquipment.mainStat && (
+                  <>
+                    <p style={{ margin: '8px 0 5px 0', fontSize: '16px', color: '#FFD700' }}>裝備基礎屬性:</p>
+                    <ul style={{ paddingLeft: '20px', margin: '5px 0' }}>
+                      {Object.entries(selectedEquipment.stats).map(([key, value]) => (
+                        <li key={key}>
+                          {statNames[key as keyof typeof statNames] || key}: {formatStatValue(key, value)}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </div>
             </div>
+
+
+
           }
           closeOnAction
           onClose={() => setSelectedEquipment(null)}
