@@ -157,7 +157,7 @@ export const getEnhancedStat = (eq: Equipment | null, slotLevel: number, statKey
     necklace: 'attack'
   };
   //每次重生裝備欄位等級提升100等
-  const rebirthSlotLevel = 100 * (player?.rebirths || 0);
+  const rebirthSlotLevel = player ? getRebirthBonus(player).equipmentSlotBonus : 0;
 
   const totalSlotLevel = slotLevel + rebirthSlotLevel;
   const isMainStat = mainStats[eq.type] === statKey;
@@ -388,17 +388,15 @@ export const getTotalStats = (player: Player) => {
   let totalDefense = Math.floor((rawTotalDefense + petDefenseBuff + artifactPassiveDefenseBuff + artifactDefense + hpToDefenseBuff) * (1 + leadDefPercent));
   let totalHealth = Math.floor((rawTotalHealth + petHealthBuff + artifactPassiveHealthBuff + artifactHealth) * (1 + totalHealthMultiplier) * (1 - leadHpPercent));
 
-  const rebirths = player.rebirths || 0;
-  //每次重生生命防禦攻擊提升20%
-  const rebirthMultiplier = 1 + rebirths * 0.2;
 
   const preRebirthAttack = totalAttack;
   const preRebirthDefense = totalDefense;
   const preRebirthHealth = totalHealth;
 
-  totalAttack = Math.floor(totalAttack * rebirthMultiplier);
-  totalDefense = Math.floor(totalDefense * rebirthMultiplier);
-  totalHealth = Math.floor(totalHealth * rebirthMultiplier);
+  const rebirthAttributeBonus = getRebirthAttributeBonus(player);
+  totalAttack = Math.floor(totalAttack * (1 + rebirthAttributeBonus.attackBonus));
+  totalDefense = Math.floor(totalDefense * (1 + rebirthAttributeBonus.defenseBonus));
+  totalHealth = Math.floor(totalHealth * (1 + rebirthAttributeBonus.healthBonus));
 
   const rebirthHealthBonus = totalHealth - preRebirthHealth;
   const rebirthAttackBonus = totalAttack - preRebirthAttack;
@@ -418,9 +416,9 @@ export const getTotalStats = (player: Player) => {
   }
 
   //每次重生暴擊率提升1%
-  const totalCrit = player.attributes.critRate + equipCritRate + artifactCritRate + (rebirths * 0.01);
+  const totalCrit = player.attributes.critRate + equipCritRate + artifactCritRate + rebirthAttributeBonus.critRateBonus;
   //每次重生暴擊傷害提升50%
-  const totalCritDmg = player.attributes.critDamage + equipCritDamage + artifactCritDmg + (rebirths * 0.50);
+  const totalCritDmg = player.attributes.critDamage + equipCritDamage + artifactCritDmg + rebirthAttributeBonus.critDamageBonus;
 
   return {
     health: Math.floor(totalHealth),
@@ -447,8 +445,8 @@ export const getTotalStats = (player: Player) => {
     rebirthHealthBonus,
     rebirthAttackBonus,
     rebirthDefenseBonus,
-    rebirthCritRateBonus: rebirths * 0.005,
-    rebirthCritDamageBonus: rebirths * 0.01,
+    rebirthCritRateBonus: rebirthAttributeBonus.critRateBonus,
+    rebirthCritDamageBonus: rebirthAttributeBonus.critDamageBonus,
   };
 };
 
@@ -495,7 +493,7 @@ export const getBossAttack = (stage: number) => {
 
   // 每 100 關提升一個指數階層 (1.25倍)
   const exponent = Math.floor(stage / 100);
-  const multiplier = Math.pow(1.1, exponent);
+  const multiplier = Math.pow(1.12, exponent);
 
   return Math.floor(baseLinear * multiplier);
 };
@@ -753,10 +751,22 @@ export const formatNumber = (num: number): string => {
   return Math.floor(num).toString();
 };
 
-//獲取重生掛機經驗和金錢加成,每次+100%
+//獲取重生掛機經驗和金錢加成,每次+100%,裝備欄位+100
 export const getRebirthBonus = (player: Player) => {
   const rebirths = player.rebirths;
   const expBonus = rebirths * 1;
   const goldBonus = rebirths * 1;
-  return { expBonus, goldBonus };
+  const equipmentSlotBonus = rebirths * 100;
+  return { expBonus, goldBonus, equipmentSlotBonus };
+};
+
+//獲取重生後屬性加成
+export const getRebirthAttributeBonus = (player: Player) => {
+  const rebirths = player.rebirths;
+  const healthBonus = rebirths * 0.2;
+  const attackBonus = rebirths * 0.2;
+  const defenseBonus = rebirths * 0.2;
+  const critRateBonus = rebirths * 0.02;
+  const critDamageBonus = rebirths * 10;
+  return { healthBonus, attackBonus, defenseBonus, critRateBonus, critDamageBonus };
 };

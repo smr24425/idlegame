@@ -954,8 +954,8 @@ export const useGameState = () => {
 
   const doRebirth = () => {
     setGameState(prev => {
-      //每重生一次多500等才能再次重生
-      const nextRebirthLevel = 2000 + (prev.player.rebirths * 500);
+      //每重生一次多200等才能再次重生
+      const nextRebirthLevel = 2000 + (prev.player.rebirths * 200);
       if (prev.player.level < nextRebirthLevel) return prev;
       return {
         ...prev,
