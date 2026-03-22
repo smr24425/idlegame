@@ -340,9 +340,9 @@ export const getGlobalArtifactPassiveStats = (player: Player) => {
 };
 
 export const getTotalStats = (player: Player) => {
-  const baseAttack = player.attributes.attack * 2;
-  const baseDefense = player.attributes.defense * 2;
-  const baseHealth = 100 + player.attributes.health * 20;
+  const baseAttack = player.attributes.attack * 50;
+  const baseDefense = player.attributes.defense * 50;
+  const baseHealth = 100 + player.attributes.health * 80;
 
   const equipAttack = Object.entries(player.equipment).reduce((sum, [type, eq]) => sum + getEnhancedStat(eq, player.slotLevels[type as Equipment['type']], 'attack', player), 0);
   const equipDefense = Object.entries(player.equipment).reduce((sum, [type, eq]) => sum + getEnhancedStat(eq, player.slotLevels[type as Equipment['type']], 'defense', player), 0);
