@@ -363,12 +363,17 @@ function App() {
           color: "var(--text)",
         }}
       >
-        <TopBar
-          player={gameState.player}
-          onOpenExchange={() => setExchangeModalVisible(true)}
-          onSync={handleManualSync}
-          onDownload={handleManualDownload}
-        />
+        <div style={{
+          paddingTop: 'env(safe-area-inset-top)'
+        }}>
+          <TopBar
+            player={gameState.player}
+            onOpenExchange={() => setExchangeModalVisible(true)}
+            onSync={handleManualSync}
+            onDownload={handleManualDownload}
+          />
+        </div>
+
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: "auto" }}>
           {renderContent()}
         </div>
