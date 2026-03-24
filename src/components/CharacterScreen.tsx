@@ -124,11 +124,11 @@ export const CharacterScreen: React.FC<CharacterScreenProps> = ({ player, invent
 
   return (
     <div style={{
-      minHeight: '100vh',
+      height: '100%',
       background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)',
       padding: '20px',
       position: 'relative',
-      overflow: 'hidden'
+      overflow: 'auto'
     }}>
       {/* Background Effects */}
       <div style={{

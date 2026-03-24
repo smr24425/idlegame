@@ -57,7 +57,7 @@ export const ArtifactScreen: React.FC<ArtifactScreenProps> = ({
   while (equippedIds.length < 3) equippedIds.push('');
 
   return (
-    <div style={{ padding: '0 0 80px 0', height: '100%', overflowY: 'auto' }}>
+    <div style={{ padding: '0 0 20px 0', height: '100%', overflowY: 'auto' }}>
 
       {/* 裝備中的神器 */}
       <Card title="裝備中的神器" style={{ margin: '10px' }} className="dark-card">
@@ -238,21 +238,21 @@ export const ArtifactScreen: React.FC<ArtifactScreenProps> = ({
                 <p style={{ margin: '0 0 10px 0', color: '#ccc', fontSize: '14px', lineHeight: '1.5' }}>
                   {(() => {
                     const displayLevel = Math.max(1, level);
-                    const displayVal = config.levelGrowth !== undefined 
-                      ? (config.baseValue + (displayLevel - 1) * config.levelGrowth) 
+                    const displayVal = config.levelGrowth !== undefined
+                      ? (config.baseValue + (displayLevel - 1) * config.levelGrowth)
                       : (config.baseValue * displayLevel);
-                    
+
                     const isFlat = ['baseAttack', 'baseDefense', 'baseHealth'].includes(config.effectType);
                     const formattedVal = isFlat ? displayVal : parseFloat((displayVal * 100).toFixed(1));
-                    
+
                     const parts = config.description.split('{val}');
                     if (parts.length > 1) {
                       return (
-                         <span>
-                           {parts[0]}
-                           <span style={{ color: '#4CAF50', fontWeight: 'bold', fontSize: '16px' }}>{formattedVal}</span>
-                           {parts[1]}
-                         </span>
+                        <span>
+                          {parts[0]}
+                          <span style={{ color: '#4CAF50', fontWeight: 'bold', fontSize: '16px' }}>{formattedVal}</span>
+                          {parts[1]}
+                        </span>
                       );
                     }
                     return config.description;

@@ -355,7 +355,7 @@ function App() {
     <ConfigProvider>
       <div
         style={{
-          height: "100vh",
+          height: "100%",
           width: "100%",
           display: "flex",
           flexDirection: "column",
@@ -369,34 +369,23 @@ function App() {
           onSync={handleManualSync}
           onDownload={handleManualDownload}
         />
-        <div style={{ flex: 1, overflow: "auto", paddingBottom: "calc(60px + env(safe-area-inset-bottom))" }}>
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: "auto" }}>
           {renderContent()}
         </div>
-        <div
-          style={{
-            position: "fixed",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            zIndex: 1000,
-            background: "rgba(10, 10, 25, 0.9)",
-            borderTop: "1px solid rgba(255, 215, 0, 0.25)",
-            paddingBottom: "env(safe-area-inset-bottom)",
-          }}
-        >
-          <TabBar activeKey={uiState.activeKey} onChange={setActiveKey} style={{ background: 'transparent' }}>
-            {tabs.map((item) => {
-              const isActive = uiState.activeKey === item.key;
-              return (
-                <TabBar.Item
-                  key={item.key}
-                  icon={<span style={{ color: isActive ? 'var(--accent)' : 'var(--muted)', fontSize: 18 }}>{item.icon}</span>}
-                  title={<span style={{ color: isActive ? 'var(--accent)' : 'var(--muted)', fontSize: 12 }}>{item.title}</span>}
-                />
-              );
-            })}
-          </TabBar>
-        </div>
+
+        <TabBar activeKey={uiState.activeKey} onChange={setActiveKey}>
+          {tabs.map((item) => {
+            const isActive = uiState.activeKey === item.key;
+            return (
+              <TabBar.Item
+                key={item.key}
+                icon={<span style={{ color: isActive ? 'var(--accent)' : 'var(--muted)', fontSize: 18 }}>{item.icon}</span>}
+                title={<span style={{ color: isActive ? 'var(--accent)' : 'var(--muted)', fontSize: 12 }}>{item.title}</span>}
+              />
+            );
+          })}
+        </TabBar>
+
         <AttributePanel
           player={gameState.player}
           allocatePoint={allocatePoint}

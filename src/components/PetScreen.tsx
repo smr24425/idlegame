@@ -66,7 +66,7 @@ export const PetScreen: React.FC<PetScreenProps> = ({
   const equippedPet = equippedConfig ? gameState.player.pets[equippedConfig.id] : null;
 
   return (
-    <div style={{ padding: '20px', paddingBottom: '80px', height: '100%', overflowY: 'auto' }}>
+    <div style={{ padding: '20px', height: '100%', overflowY: 'auto' }}>
 
       {/* 出戰與欄位升級區塊 */}
       <Card title="當前出戰配置" style={{ marginBottom: '15px', background: 'var(--card-bg)', borderColor: 'var(--card-border)' }}>
@@ -201,7 +201,6 @@ export const PetScreen: React.FC<PetScreenProps> = ({
           })}
         </div>
       </Card>
-      <div style={{ height: '60px' }} />
 
       {showBulkPreview && (() => {
         const preview = calculateBulkPetSlotUpgrade(slotLevel, gameState.player.money, ownedUpgradeFragments);
