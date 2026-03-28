@@ -50,6 +50,8 @@ export const CombatScreen: React.FC<CombatScreenProps> = ({ gameState, onFightEn
       const playerDefense = stats.defense;
       const playerCritRate = Math.min(1, stats.critRate);
       const playerCritDamage = stats.critDamage;
+      // @ts-ignore
+      const bossDamageBonus = stats.bossDamage;
 
       const bossAttack = gameState.currentBoss!.attack;
       const bossDefense = gameState.currentBoss!.defense;
@@ -66,7 +68,6 @@ export const CombatScreen: React.FC<CombatScreenProps> = ({ gameState, onFightEn
       const activePetConfig = activePet ? PET_CONFIGS.find(p => p.id === activePet.configId) : null;
 
       const artifactDodgeRate = getArtifactEffectValue(gameState.player, 'dodgeRate');
-      const artifactBossDmg = getArtifactEffectValue(gameState.player, 'highLevelBossDamage');
       const artifactLowHpDef = getArtifactEffectValue(gameState.player, 'lowHealthDefense');
       const artifactTurnRegen = getArtifactEffectValue(gameState.player, 'turnHealthRegen');
 
@@ -74,7 +75,6 @@ export const CombatScreen: React.FC<CombatScreenProps> = ({ gameState, onFightEn
       const artifactDodgeDamageBoost = getArtifactEffectValue(gameState.player, 'dodgeDamageBoost');
       const artifactDoubleAttackChance = getArtifactEffectValue(gameState.player, 'doubleAttackChance');
       const artifactDamageReflect = getArtifactEffectValue(gameState.player, 'damageReflect');
-      const artifactFinalDamageMultiplier = getArtifactEffectValue(gameState.player, 'finalDamageMultiplier');
       const artifactHalfHealthAttackUp = getArtifactEffectValue(gameState.player, 'halfHealthAttackUp');
       const artifactHighHealthAttackUp = getArtifactEffectValue(gameState.player, 'highHealthAttackUp');
 
@@ -125,15 +125,14 @@ export const CombatScreen: React.FC<CombatScreenProps> = ({ gameState, onFightEn
         const isCrit = Math.random() < playerCritRate;
         const critMultiplier = isCrit ? 1.5 + playerCritDamage : 1;
 
-        // Medal of courage damage amplification against stronger bosses + HP Modifiers
-        const isStrongerBoss = gameState.player.stage > gameState.player.level;
-        const baseDamageMultiplier = critMultiplier * (1 + (isStrongerBoss ? artifactBossDmg : 0)) * dynamicAttackMultiplier;
+        // Unified boss damage amplification against boss + HP Modifiers
+        const baseDamageMultiplier = critMultiplier * (1 + bossDamageBonus) * dynamicAttackMultiplier;
 
         let baseDamage = Math.max(1, Math.floor(playerAttack * 1000 / (1000 + bossDefense)));
         let playerDamage = Math.max(1, Math.floor(baseDamage * baseDamageMultiplier));
 
         // Final Multipliers
-        playerDamage = Math.floor(playerDamage * (1 + artifactFinalDamageMultiplier) * (1 + currentDodgeBoost));
+        playerDamage = Math.floor(playerDamage * (1 + currentDodgeBoost));
         currentDodgeBoost = 0; // reset after swing
 
         bHealth = Math.max(0, bHealth - playerDamage);

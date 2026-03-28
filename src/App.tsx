@@ -18,6 +18,7 @@ import { generateEquipment, getActivePetBonus, getItemConfig } from "./utils/gam
 import { auth } from "./firebase";
 import { onAuthStateChanged, User, signOut } from "firebase/auth";
 import { uploadCloudSave, downloadCloudSave } from "./utils/cloudSync";
+import { MegaPetScreen } from "./components/MegaPetScreen";
 const tabs = [
   {
     key: "main",
@@ -38,16 +39,6 @@ const tabs = [
     key: "gacha",
     title: "抽卡",
     icon: "🎲",
-  },
-  {
-    key: "pets",
-    title: "寵物",
-    icon: "🐾",
-  },
-  {
-    key: "artifacts",
-    title: "神器",
-    icon: "🏺",
   },
   {
     key: "rebirth",
@@ -96,7 +87,11 @@ function App() {
     equipArtifact,
     unequipArtifact,
     loadCloudState,
-    doRebirth
+    doRebirth,
+    unlockMegaPet,
+    rerollMegaPetStats,
+    levelUpMegaPet,
+    drawMegaPetGacha,
   } = useGameState();
   const {
     uiState,
@@ -179,6 +174,7 @@ function App() {
             onChallengeBoss={handleChallengeBoss}
             autoChallenge={autoChallenge}
             setAutoChallenge={setAutoChallenge}
+            onNavigate={setActiveKey}
           />
         );
       case "character":
@@ -217,6 +213,7 @@ function App() {
             onDraw={drawGacha}
             onDrawPet={drawPetGacha}
             onDrawArtifact={drawArtifactGacha}
+            onDrawMegaPet={drawMegaPetGacha}
           />
         );
       case "pets":
@@ -246,6 +243,15 @@ function App() {
               doRebirth();
               setActiveKey('main');
             }}
+          />
+        );
+      case "megapet":
+        return (
+          <MegaPetScreen
+            gameState={gameState}
+            unlockMegaPet={unlockMegaPet}
+            rerollMegaPetStats={rerollMegaPetStats}
+            levelUpMegaPet={levelUpMegaPet}
           />
         );
       default:

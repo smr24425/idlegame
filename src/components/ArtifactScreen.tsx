@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { GameState } from '../types/game';
-import { ARTIFACT_CONFIGS, getArtifactUpgradeCost, getGlobalArtifactPassiveStats } from '../utils/gameLogic';
+import { ARTIFACT_CONFIGS, getArtifactUpgradeCost, getRarityStyles } from '../utils/gameLogic';
 import { Card, Button, Toast } from 'antd-mobile';
 
 interface ArtifactScreenProps {
@@ -19,13 +19,7 @@ export const ArtifactScreen: React.FC<ArtifactScreenProps> = ({
   const [selectedArtifactId, setSelectedArtifactId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>('R');
 
-  const getBorderColor = (rarity: string) => {
-    switch (rarity) {
-      case 'SSR': return '#FFD700';
-      case 'SR': return '#E040FB';
-      default: return '#ccc';
-    }
-  };
+
 
   const handleUpgrade = (configId: string) => {
     const result = upgradeArtifact(configId);
@@ -77,7 +71,7 @@ export const ArtifactScreen: React.FC<ArtifactScreenProps> = ({
                   background: 'rgba(255,255,255,0.05)',
                   padding: '10px',
                   borderRadius: '8px',
-                  border: config ? `1px solid ${getBorderColor(config.rarity)}` : '1px dashed #666',
+                  border: config ? `1px solid ${getRarityStyles(config.rarity).color}` : '1px dashed #666',
                   cursor: config ? 'pointer' : 'default'
                 }}
                 onClick={() => config && handleUnequip(index)}
@@ -91,7 +85,7 @@ export const ArtifactScreen: React.FC<ArtifactScreenProps> = ({
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginBottom: '8px',
-                  boxShadow: config ? `0 0 10px ${getBorderColor(config.rarity)}` : 'none',
+                  boxShadow: config ? `0 0 10px ${getRarityStyles(config.rarity).color}` : 'none',
                   fontSize: '24px'
                 }}>
                   {config ? '🏺' : '❌'}
@@ -126,7 +120,7 @@ export const ArtifactScreen: React.FC<ArtifactScreenProps> = ({
               style={{
                 flex: 1,
                 background: activeTab === rarity ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
-                border: `1px solid ${getBorderColor(rarity)}`,
+                border: `1px solid ${getRarityStyles(rarity).color}`,
                 color: 'white',
                 fontWeight: activeTab === rarity ? 'bold' : 'normal'
               }}
@@ -153,7 +147,7 @@ export const ArtifactScreen: React.FC<ArtifactScreenProps> = ({
                 onClick={() => setSelectedArtifactId(config.id)}
                 style={{
                   background: 'rgba(255,255,255,0.05)',
-                  border: `1px solid ${isOwned ? getBorderColor(config.rarity) : '#333'}`,
+                  border: `1px solid ${isOwned ? getRarityStyles(config.rarity).color : '#333'}`,
                   borderRadius: '8px',
                   padding: '10px',
                   display: 'flex',
@@ -163,7 +157,7 @@ export const ArtifactScreen: React.FC<ArtifactScreenProps> = ({
                   filter: isOwned ? 'none' : 'grayscale(1)',
                   opacity: isOwned ? 1 : 0.6,
                   cursor: 'pointer',
-                  boxShadow: isOwned ? `0 4px 12px ${getBorderColor(config.rarity)}33` : 'none'
+                  boxShadow: isOwned ? `0 4px 12px ${getRarityStyles(config.rarity).color}33` : 'none'
                 }}
               >
                 {(canUpgrade || (!isOwned && fragments >= 40)) && (
@@ -174,11 +168,11 @@ export const ArtifactScreen: React.FC<ArtifactScreenProps> = ({
                 <div style={{
                   width: '40px', height: '40px', borderRadius: '50%', background: '#222',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px',
-                  marginBottom: '5px', boxShadow: isOwned ? `0 0 8px ${getBorderColor(config.rarity)}` : 'none'
+                  marginBottom: '5px', boxShadow: isOwned ? `0 0 8px ${getRarityStyles(config.rarity).color}` : 'none'
                 }}>
                   🏺
                 </div>
-                <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'white', textAlign: 'center', textShadow: isOwned ? `0 0 5px ${getBorderColor(config.rarity)}` : 'none' }}>
+                <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'white', textAlign: 'center', textShadow: isOwned ? `0 0 5px ${getRarityStyles(config.rarity).color}` : 'none' }}>
                   {config.name}
                 </div>
                 <div style={{ fontSize: '10px', color: '#aaa', marginTop: '2px' }}>
@@ -224,12 +218,12 @@ export const ArtifactScreen: React.FC<ArtifactScreenProps> = ({
           }}>
             <div style={{
               background: '#1A1A2E', borderRadius: '16px', padding: '20px', width: '100%', maxWidth: '400px',
-              border: `1px solid ${getBorderColor(config.rarity)}`, boxShadow: `0 0 20px ${getBorderColor(config.rarity)}33`
+              border: `1px solid ${getRarityStyles(config.rarity).color}`, boxShadow: `0 0 20px ${getRarityStyles(config.rarity).color}33`
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                 <h3 style={{ margin: 0, color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ fontSize: '24px' }}>🏺</span>
-                  <span style={{ textShadow: `0 0 8px ${getBorderColor(config.rarity)}` }}>{config.name}</span>
+                  <span style={{ textShadow: `0 0 8px ${getRarityStyles(config.rarity).color}` }}>{config.name}</span>
                 </h3>
                 <span style={{ fontSize: '20px', cursor: 'pointer', color: '#888' }} onClick={() => setSelectedArtifactId(null)}>✕</span>
               </div>

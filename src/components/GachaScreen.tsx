@@ -2,16 +2,17 @@ import React, { useState } from 'react';
 import { GameState, Equipment } from '../types/game';
 import { Card, Button, Dialog, Switch } from 'antd-mobile';
 import { FormattedNumber } from './FormattedNumber';
-import { getItemConfig } from '../utils/gameLogic';
+import { getItemConfig, getRarityStyles } from '../utils/gameLogic';
 
 interface GachaScreenProps {
   gameState: GameState;
   onDraw: (times: number, isAutoSell: boolean) => { success: boolean; equipments: Equipment[]; totalGainGold?: number };
   onDrawPet: (times: number) => { success: boolean; results: any[], message: string };
   onDrawArtifact: (times: number) => { success: boolean; results: any[], message: string };
+  onDrawMegaPet: (times: number) => { success: boolean; message: string; results?: { type: string; amount: number }[] };
 }
 
-export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onDrawPet, onDrawArtifact }) => {
+export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onDrawPet, onDrawArtifact, onDrawMegaPet }) => {
   const [resultEquipments, setResultEquipments] = useState<Equipment[]>([]);
   const [dialogVisible, setDialogVisible] = useState(false);
   const [lastDrawAmount, setLastDrawAmount] = useState<number>(1);
@@ -25,6 +26,10 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
   const [lastArtifactDrawAmount, setLastArtifactDrawAmount] = useState<number>(1);
   const [isAutoSell, setIsAutoSell] = useState(true);
   const [totalGainGold, setTotalGainGold] = useState<number>(0);
+
+  const [megaPetDialogVisible, setMegaPetDialogVisible] = useState(false);
+  const [megaPetResults, setMegaPetResults] = useState<{ type: string; amount: number }[]>([]);
+  const [lastMegaPetDrawAmount, setLastMegaPetDrawAmount] = useState<number>(1);
 
   const handleDraw = (times: number) => {
     const result = onDraw(times, isAutoSell);
@@ -72,16 +77,15 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
     setArtifactDialogVisible(true);
   };
 
-  const getBorderColor = (rarity: Equipment['rarity']) => {
-    switch (rarity) {
-      case 'white': return '#ccc';
-      case 'green': return '#0f0';
-      case 'blue': return '#00f';
-      case 'purple': return '#f0f';
-      case 'gold': return '#ff0';
-      case 'red': return '#ff4444';
-      default: return '#ccc';
+  const handleDrawMegaPet = (times: number) => {
+    const res = onDrawMegaPet(times);
+    if (!res.success) {
+      Dialog.alert({ title: '鑽石不足', content: res.message, confirmText: '確定' });
+      return;
     }
+    setLastMegaPetDrawAmount(times);
+    setMegaPetResults(res.results || []);
+    setMegaPetDialogVisible(true);
   };
 
   return (
@@ -195,6 +199,42 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
         </Button>
       </Card>
 
+      <Card title="萌獸抽卡" style={{ marginTop: '15px', background: 'var(--card-bg)', border: '1px solid var(--card-border)', boxShadow: 'var(--shadow)', color: 'var(--text)', textAlign: 'center', position: 'relative' }}>
+        {gameState.player.rebirths < 2 && (
+          <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.6)', borderRadius: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
+            <span style={{ fontSize: '48px', marginBottom: '10px' }}>⛓️</span>
+            <span style={{ color: '#FF5252', fontWeight: 'bold', fontSize: '18px' }}>需達成 2 次轉生</span>
+          </div>
+        )}
+        <p style={{ fontSize: '18px', marginBottom: '20px', color: '#00E5FF', fontWeight: 'bold' }}>
+          目前{getItemConfig('diamonds').name}: {getItemConfig('diamonds').icon} <FormattedNumber value={gameState.player.diamonds} />
+        </p>
+
+        <p style={{ color: 'var(--muted)', fontSize: '14px', marginBottom: '20px' }}>
+          每抽取一次花費 100,000 {getItemConfig('diamonds').name}。<br />
+          每次抽取可獲得 1~2 個萌獸碎片！
+        </p>
+
+        <Button
+          block
+          size="large"
+          color="warning"
+          onClick={() => handleDrawMegaPet(1)}
+          style={{ marginBottom: '15px', fontWeight: 'bold', borderRadius: '8px' }}
+        >
+          單抽 ({getItemConfig('diamonds').icon} 100,000)
+        </Button>
+        <Button
+          block
+          size="large"
+          color="danger"
+          onClick={() => handleDrawMegaPet(10)}
+          style={{ fontWeight: 'bold', borderRadius: '8px' }}
+        >
+          十連抽 ({getItemConfig('diamonds').icon} 1,000,000)
+        </Button>
+      </Card>
+
       <Dialog
         visible={dialogVisible}
         title="抽卡結果"
@@ -206,19 +246,21 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
                 獲得 {getItemConfig('money').icon} {totalGainGold}
               </div>
             )}
-            {resultEquipments.length > 0 ? resultEquipments.map((eq, idx) => (
+            {resultEquipments.length > 0 ? resultEquipments.map((eq, idx) => {
+              const rStyle = getRarityStyles(eq.rarity);
+              return (
               <div key={idx} style={{
-                border: `2px solid ${getBorderColor(eq.rarity)}`,
+                border: `2px solid ${rStyle.color}`,
                 borderRadius: '8px',
                 padding: '5px',
                 textAlign: 'center',
                 background: 'rgba(0,0,0,0.3)',
-                boxShadow: eq.rarity === 'red' ? '0 0 10px #ff4444' : 'none'
+                boxShadow: rStyle.boxShadow
               }}>
                 <div style={{ fontSize: '12px', color: 'var(--text)', fontWeight: 'bold' }}>{eq.name}</div>
                 <div style={{ fontSize: '10px', color: 'var(--muted)' }}>Lv {eq.level}</div>
               </div>
-            )) : <div style={{
+            )}) : <div style={{
               visibility: 'hidden',
               border: `2px solid`,
               borderRadius: '8px',
@@ -260,21 +302,25 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
               let bgColor = 'rgba(0,0,0,0.3)';
 
               if (r.type === 'full') {
-                const isSSR = r.pet.rarity === 'SSR';
-                borderColor = isSSR ? '#FFD700' : '#E040FB';
-                textColor = borderColor;
+                const itemConfig = getItemConfig(`pet_fragment_${r.pet.id}`);
+                const rStyle = getRarityStyles(itemConfig.rarity);
+                borderColor = rStyle.color;
+                textColor = rStyle.color;
                 name = `${r.pet.rarity} ${r.pet.name}`;
                 desc = '完整寵物';
-                bgColor = isSSR ? 'rgba(255, 215, 0, 0.1)' : 'rgba(224, 64, 251, 0.1)';
+                bgColor = itemConfig.rarity === 'gold' ? 'rgba(255, 215, 0, 0.1)' : 'rgba(224, 64, 251, 0.1)';
               } else if (r.type === 'upgrade_fragment') {
-                borderColor = '#00E5FF';
-                textColor = '#00E5FF';
-                name = `${getItemConfig('pet_upgrade_fragment').icon}${getItemConfig('pet_upgrade_fragment').name}`;
+                const itemConfig = getItemConfig('pet_upgrade_fragment');
+                const rStyle = getRarityStyles(itemConfig.rarity);
+                borderColor = rStyle.color;
+                textColor = rStyle.color;
+                name = `${itemConfig.icon}${itemConfig.name}`;
                 desc = `x${r.amount}`;
               } else {
-                const isSSR = r.pet.rarity === 'SSR';
-                borderColor = isSSR ? '#FFD700' : '#E040FB';
-                textColor = borderColor;
+                const itemConfig = getItemConfig(`pet_fragment_${r.pet.id}`);
+                const rStyle = getRarityStyles(itemConfig.rarity);
+                borderColor = rStyle.color;
+                textColor = rStyle.color;
                 name = r.pet.name.substring(0, 3) + '碎';
                 desc = `x${r.amount}`;
               }
@@ -318,7 +364,9 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
         content={
           <div style={{ maxHeight: '300px', overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: '10px' }}>
             {resultArtifacts.map((r, idx) => {
-              let borderColor = r.artifact.rarity === 'SSR' ? '#FFD700' : (r.artifact.rarity === 'SR' ? '#E040FB' : '#4CAF50');
+              const itemConfig = getItemConfig(`artifact_fragment_${r.artifact.id}`);
+              const rStyle = getRarityStyles(itemConfig.rarity);
+              let borderColor = rStyle.color;
               let textColor = borderColor;
               let name = '';
               let desc = '';
@@ -329,7 +377,7 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
                 isFull = true;
                 name = `🏺 ${r.artifact.name}`;
                 desc = '完整神器';
-                bgColor = `rgba(${r.artifact.rarity === 'SSR' ? '255,215,0' : (r.artifact.rarity === 'SR' ? '224,64,251' : '76,175,80')}, 0.1)`;
+                bgColor = itemConfig.rarity === 'gold' ? 'rgba(255,215,0,0.1)' : (itemConfig.rarity === 'purple' ? 'rgba(224,64,251,0.1)' : 'rgba(76,175,80,0.1)');
               } else {
                 name = `${r.artifact.name}碎片`;
                 desc = `x${r.amount}`;
@@ -363,6 +411,50 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
             text: '確定',
             bold: true,
             onClick: () => setArtifactDialogVisible(false)
+          }
+        ]}
+      />
+
+      <Dialog
+        visible={megaPetDialogVisible}
+        title="抽卡結果"
+        onClose={() => setMegaPetDialogVisible(false)}
+        content={
+          <div style={{ maxHeight: '300px', overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: '10px' }}>
+            {megaPetResults.map((r, idx) => {
+               const itemConfig = getItemConfig('mega_pet_fragment');
+               const rStyle = getRarityStyles(itemConfig.rarity);
+               return (
+                 <div key={idx} style={{
+                   border: `2px solid ${rStyle.color}`,
+                   borderRadius: '8px',
+                   padding: '5px',
+                   textAlign: 'center',
+                   background: 'rgba(0,0,0,0.3)',
+                   boxShadow: rStyle.boxShadow,
+                 }}>
+                   <div style={{ fontSize: '24px', marginBottom: '4px' }}>{itemConfig.icon}</div>
+                   <div style={{ fontSize: '10px', color: rStyle.color, fontWeight: 'bold' }}>
+                     {itemConfig.name}
+                   </div>
+                   <div style={{ fontSize: '12px', color: 'var(--text)', marginTop: '2px', fontWeight: 'bold' }}>x{r.amount}</div>
+                 </div>
+               );
+            })}
+          </div>
+        }
+        actions={[
+          {
+            key: 'again',
+            text: lastMegaPetDrawAmount === 10 ? '再次十連' : '再次單抽',
+            onClick: () => handleDrawMegaPet(lastMegaPetDrawAmount),
+            style: { color: lastMegaPetDrawAmount === 10 ? '#FF5252' : '#FF9800', fontWeight: 'bold' }
+          },
+          {
+            key: 'ok',
+            text: '確定',
+            bold: true,
+            onClick: () => setMegaPetDialogVisible(false)
           }
         ]}
       />

@@ -24,16 +24,20 @@ export const PetScreen: React.FC<PetScreenProps> = ({
 
   const getEffectText = (config: PetConfig) => {
     const val = config.baseValue * 100;
-    switch (config.effectType) {
-      case 'goldGain': return `掛機金幣 +${val}%`;
-      case 'expGain': return `掛機經驗 +${val}%`;
-      case 'dropRate': return `高階掉落率 +${val}%`;
-      case 'dualResource': return `經驗與金幣雙 +${val}%`;
-      case 'healthPercentage': return `生命值 +${val}%`;
-      case 'attackPercentage': return `攻擊力 +${val}%`;
-      case 'defensePercentage': return `防禦力 +${val}%`;
-      default: return '';
-    }
+    if (!Array.isArray(config.effectType)) return '';
+    
+    const descriptions: string[] = [];
+    if (config.effectType.includes('expGain') && config.effectType.includes('goldGain')) return `經驗與金幣雙 +${val}%`;
+    
+    if (config.effectType.includes('goldGain')) descriptions.push(`掛機金幣`);
+    if (config.effectType.includes('expGain')) descriptions.push(`掛機經驗`);
+    if (config.effectType.includes('dropRate')) descriptions.push(`高階掉落率`);
+    if (config.effectType.includes('healthPercentage')) descriptions.push(`生命值`);
+    if (config.effectType.includes('attackPercentage')) descriptions.push(`攻擊力`);
+    if (config.effectType.includes('defensePercentage')) descriptions.push(`防禦力`);
+    
+    if (descriptions.length === 0) return '';
+    return `${descriptions.join('與')} +${val}%`;
   };
 
   const getPassiveText = (config: PetConfig) => {

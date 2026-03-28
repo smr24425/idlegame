@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Toast } from "antd-mobile";
+import { Button } from "antd-mobile";
 
 interface StartScreenProps {
   userEmail: string | null;

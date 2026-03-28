@@ -42,6 +42,11 @@ const initialPlayer: Player = {
     necklace: 0,
   },
   rebirths: 0,
+  megaPet: {
+    unlocked: false,
+    level: 1,
+    slots: [{ type: null }, { type: null }, { type: null }]
+  }
 };
 
 export const useGameState = () => {
@@ -74,6 +79,7 @@ export const useGameState = () => {
       parsed.player.pets = parsed.player.pets || {};
       if (parsed.player.equippedPetId === undefined) parsed.player.equippedPetId = null;
       parsed.player.rebirths = parsed.player.rebirths || 0;
+      parsed.player.megaPet = parsed.player.megaPet || { unlocked: false, level: 1, slots: [{ type: null }, { type: null }, { type: null }] };
       // Ensure inventory exists
       parsed.inventory = {
         equipment: parsed.inventory?.equipment || [],
@@ -114,14 +120,16 @@ export const useGameState = () => {
     const artifactUpgradeDropRate = getArtifactEffectValue(gameState.player, 'upgradeStoneDropRate');
     const artifactPetStoneDropRate = getArtifactEffectValue(gameState.player, 'petStoneDropRate');
 
-    //重生經驗加成
     const rebirthBonus = getRebirthBonus(gameState.player);
     const rebirthExpBonus = rebirthBonus.expBonus;
     const rebirthGoldBonus = rebirthBonus.goldBonus;
 
+    const megaPetExpBonus = gameState.player.megaPet?.unlocked ? gameState.player.megaPet.slots.reduce((sum, slot) => sum + (slot.type === 'expGain' ? 3 * gameState.player.megaPet.level : 0), 0) : 0;
+    const megaPetGoldBonus = gameState.player.megaPet?.unlocked ? gameState.player.megaPet.slots.reduce((sum, slot) => sum + (slot.type === 'goldGain' ? 3 * gameState.player.megaPet.level : 0), 0) : 0;
+
     // 每秒獲得的經驗 / 金錢會根據當前關卡上升
-    const expGained = timeDiff * gameState.player.stage * 10 * (1 + expBonus + artifactExpBonus + rebirthExpBonus); // per second
-    const moneyGained = timeDiff * gameState.player.stage * 5 * (1 + goldBonus + artifactGoldBonus + rebirthGoldBonus);
+    const expGained = timeDiff * gameState.player.stage * 10 * (1 + expBonus + artifactExpBonus + rebirthExpBonus + megaPetExpBonus); // per second
+    const moneyGained = timeDiff * gameState.player.stage * 5 * (1 + goldBonus + artifactGoldBonus + rebirthGoldBonus + megaPetGoldBonus);
     // 每 60 秒掉一件裝備
     const minutes = Math.floor(timeDiff / 60);
     const equipments: Equipment[] = [];
@@ -1013,10 +1021,118 @@ export const useGameState = () => {
           equipment: [],
         },
         fightLog: [],
-        currentBoss: null,
         isFighting: false
       };
     });
+  };
+
+  const unlockMegaPet = () => {
+    if (gameState.player.rebirths < 2) return { success: false, message: '需達成 2 次轉生' };
+    if (gameState.player.diamonds < 5000000) return { success: false, message: '鑽石不足 5,000,000' };
+
+    setGameState(prev => {
+      const getStat = () => {
+        const weights = [293, 293, 293, 50, 50, 10, 10, 1];
+        const types = ['attack', 'defense', 'health', 'critRate', 'critDamage', 'expGain', 'goldGain', 'bossDamage'];
+        let w = Math.random() * 1000;
+        for (let i = 0; i < weights.length; i++) {
+          w -= weights[i];
+          if (w <= 0) return types[i];
+        }
+        return types[0];
+      };
+
+      return {
+        ...prev,
+        player: {
+          ...prev.player,
+          diamonds: prev.player.diamonds - 5000000,
+          megaPet: {
+            ...prev.player.megaPet,
+            unlocked: true,
+            level: 1,
+            slots: [{ type: getStat() }, { type: getStat() }, { type: getStat() }]
+          }
+        }
+      }
+    });
+    return { success: true, message: '解鎖成功！' };
+  };
+
+  const rerollMegaPetStats = (lock0: boolean, lock1: boolean, lock2: boolean) => {
+    const lockedCount = [lock0, lock1, lock2].filter(Boolean).length;
+    if (lockedCount === 3) return { success: false, message: '不能全部鎖定' };
+    let cost = 10000;
+    if (lockedCount === 1) cost = 100000;
+    if (lockedCount === 2) cost = 200000;
+    if (gameState.player.diamonds < cost) return { success: false, message: `鑽石不足 ${cost}` };
+
+    setGameState(prev => {
+      const getStat = () => {
+        const weights = [293, 293, 293, 50, 50, 10, 10, 1];
+        const types = ['attack', 'defense', 'health', 'critRate', 'critDamage', 'expGain', 'goldGain', 'bossDamage'];
+        let w = Math.random() * 1000;
+        for (let i = 0; i < weights.length; i++) {
+          w -= weights[i];
+          if (w <= 0) return types[i];
+        }
+        return types[0];
+      };
+
+      const slots = [...prev.player.megaPet.slots];
+      if (!lock0) slots[0] = { type: getStat() };
+      if (!lock1) slots[1] = { type: getStat() };
+      if (!lock2) slots[2] = { type: getStat() };
+      
+      return {
+        ...prev,
+        player: { ...prev.player, diamonds: prev.player.diamonds - cost, megaPet: { ...prev.player.megaPet, slots } }
+      }
+    });
+    return { success: true, message: '重製成功！' };
+  };
+
+  const levelUpMegaPet = () => {
+    const cost = gameState.player.megaPet.level * 10;
+    const item = gameState.inventory.items.find(i => i.id === 'mega_pet_fragment');
+    if (!item || item.quantity < cost) return { success: false, message: `碎片不足！需要 ${cost} 碎片` };
+    
+    setGameState(prev => {
+      let items = [...prev.inventory.items];
+      const idx = items.findIndex(i => i.id === 'mega_pet_fragment');
+      items[idx] = { ...items[idx], quantity: items[idx].quantity - cost };
+      return {
+        ...prev,
+        inventory: { ...prev.inventory, items },
+        player: { ...prev.player, megaPet: { ...prev.player.megaPet, level: prev.player.megaPet.level + 1 } }
+      }
+    });
+    return { success: true, message: '升級成功' };
+  };
+
+  const drawMegaPetGacha = (times: number) => {
+    const cost = times * 100000;
+    if (gameState.player.diamonds < cost) return { success: false, message: '鑽石不足' };
+    
+    let totalFrags = 0;
+    const results: { type: string; amount: number }[] = [];
+    for(let i=0; i<times; i++) {
+        const drop = Math.floor(Math.random() * 2) + 1; // 1-2
+        totalFrags += drop;
+        results.push({ type: 'mega_pet_fragment', amount: drop });
+    }
+    setGameState(prev => {
+      let items = [...prev.inventory.items];
+      const idx = items.findIndex(i => i.id === 'mega_pet_fragment');
+      if(idx >= 0) items[idx] = { ...items[idx], quantity: items[idx].quantity + totalFrags };
+      else items.push({ id: 'mega_pet_fragment', name: '萌獸碎片', type: 'material', quantity: totalFrags });
+      return {
+        ...prev,
+        inventory: { ...prev.inventory, items },
+        player: { ...prev.player, diamonds: prev.player.diamonds - cost }
+      }
+    });
+    return { success: true, message: `抽出 ${totalFrags} 個萌獸碎片`, results };
   };
 
   return {
@@ -1046,6 +1162,10 @@ export const useGameState = () => {
     equipArtifact,
     unequipArtifact,
     loadCloudState,
-    doRebirth
+    doRebirth,
+    unlockMegaPet,
+    rerollMegaPetStats,
+    levelUpMegaPet,
+    drawMegaPetGacha,
   };
 };

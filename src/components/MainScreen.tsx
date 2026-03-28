@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { GameState } from '../types/game';
 import { Button, Card, Switch } from 'antd-mobile';
-import { getActivePetBonus, getRebirthBonus } from '../utils/gameLogic';
+import { getTotalStats } from '../utils/gameLogic';
 import { FormattedNumber } from './FormattedNumber';
 
 interface MainScreenProps {
@@ -10,6 +10,7 @@ interface MainScreenProps {
   onChallengeBoss: () => void;
   autoChallenge: boolean;
   setAutoChallenge: (val: boolean) => void;
+  onNavigate: (key: string) => void;
 }
 
 export const MainScreen: React.FC<MainScreenProps> = ({
@@ -17,7 +18,8 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   onCollect,
   onChallengeBoss,
   autoChallenge,
-  setAutoChallenge
+  setAutoChallenge,
+  onNavigate
 }) => {
   // --- 新增：強制每秒更新畫面的 State ---
   const [, setTick] = useState(0);
@@ -33,18 +35,12 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   }, []);
   // ------------------------------------
 
-  //寵物加成
-  const expBonus = getActivePetBonus(gameState.player, 'expGain');
-  const goldBonus = getActivePetBonus(gameState.player, 'goldGain');
-
-  //重生加成
-  const rebirthExpBonus = getRebirthBonus(gameState.player).expBonus;
-  const rebirthGoldBonus = getRebirthBonus(gameState.player).goldBonus;
+  const stats = getTotalStats(gameState.player);
 
   const expPerSecond = gameState.player.stage * 10;
-  const expTotal = expPerSecond * (1 + expBonus + rebirthExpBonus);
+  const expTotal = expPerSecond * (1 + stats.expGain);
   const moneyPerSecond = gameState.player.stage * 5;
-  const moneyTotal = moneyPerSecond * (1 + goldBonus + rebirthGoldBonus);
+  const moneyTotal = moneyPerSecond * (1 + stats.goldGain);
 
   const timeDiff = Math.floor((Date.now() - gameState.lastCollectTime) / 1000);
   const canCollect = timeDiff >= 60; // 滿 60 秒才可領取
@@ -52,8 +48,8 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   return (
     <div style={{ padding: '20px' }}>
       <Card title="收益" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', boxShadow: 'var(--shadow)', color: 'var(--text)' }}>
-        <p>經驗/秒: <FormattedNumber value={expPerSecond} />{expBonus > 0 ? <span> (寵物+{Math.round(expBonus * 100)}%)</span> : ''} {rebirthExpBonus > 0 ? <span> (重生+{Math.round(rebirthExpBonus * 100)}%)</span> : ''} = <FormattedNumber value={expTotal} /></p>
-        <p>金錢/秒: <FormattedNumber value={moneyPerSecond} />{goldBonus > 0 ? <span> (寵物+{Math.round(goldBonus * 100)}%)</span> : ''} {rebirthGoldBonus > 0 ? <span> (重生+{Math.round(rebirthGoldBonus * 100)}%)</span> : ''} = <FormattedNumber value={moneyTotal} /></p>
+        <p>經驗/秒: <FormattedNumber value={expPerSecond} /> {stats.expGain > 0 ? <span style={{ color: '#4CAF50' }}>(+{(stats.expGain * 100).toFixed(1)}%)</span> : ''} = <FormattedNumber value={expTotal} /></p>
+        <p>金錢/秒: <FormattedNumber value={moneyPerSecond} /> {stats.goldGain > 0 ? <span style={{ color: '#FFD700' }}>(+{(stats.goldGain * 100).toFixed(1)}%)</span> : ''} = <FormattedNumber value={moneyTotal} /></p>
       </Card>
       <Card title="主畫面" style={{ marginTop: '16px', background: 'var(--card-bg)', border: '1px solid var(--card-border)', boxShadow: 'var(--shadow)', color: 'var(--text)' }}>
         <Button
@@ -93,6 +89,28 @@ export const MainScreen: React.FC<MainScreenProps> = ({
               '--width': '42px',
             }}
           />
+        </div>
+      </Card>
+
+      <Card title="功能系統" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', boxShadow: 'var(--shadow)', color: 'var(--text)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px' }}>
+          <div onClick={() => onNavigate('pets')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', background: 'rgba(255, 255, 255, 0.05)', padding: '15px 5px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+            <span style={{ fontSize: '32px', marginBottom: '8px' }}>🐾</span>
+            <span style={{ fontWeight: 'bold', fontSize: '14px', color: 'var(--text)' }}>寵物</span>
+          </div>
+          <div onClick={() => onNavigate('artifacts')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', background: 'rgba(255, 255, 255, 0.05)', padding: '15px 5px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+            <span style={{ fontSize: '32px', marginBottom: '8px' }}>🏺</span>
+            <span style={{ fontWeight: 'bold', fontSize: '14px', color: 'var(--text)' }}>神器</span>
+          </div>
+          <div onClick={() => { if (gameState.player.rebirths >= 2) onNavigate('megapet'); }} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: gameState.player.rebirths >= 2 ? 'pointer' : 'not-allowed', background: 'rgba(255, 255, 255, 0.05)', padding: '15px 5px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.1)', position: 'relative' }}>
+            {gameState.player.rebirths < 2 && (
+              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.6)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
+                <span style={{ fontSize: '24px' }}>⛓️</span>
+              </div>
+            )}
+            <span style={{ fontSize: '32px', marginBottom: '8px' }}>🐲</span>
+            <span style={{ fontWeight: 'bold', fontSize: '14px', color: 'var(--text)' }}>萌獸</span>
+          </div>
         </div>
       </Card>
     </div>

@@ -1,4 +1,4 @@
-export type PetEffectType = 'goldGain' | 'expGain' | 'dropRate' | 'healthPercentage' | 'attackPercentage' | 'defensePercentage' | 'dualResource';
+export type PetEffectType = 'goldGain' | 'expGain' | 'dropRate' | 'healthPercentage' | 'attackPercentage' | 'defensePercentage';
 
 export interface PetCombatSkill {
   type: 'heal';
@@ -11,7 +11,7 @@ export interface PetCombatSkill {
 export interface PetConfig {
   id: string;
   name: string;
-  effectType: PetEffectType;
+  effectType: PetEffectType | PetEffectType[];
   baseValue: number;
   passiveType: 'healthPercentage' | 'attackPercentage' | 'defensePercentage';
   passiveBaseValue: number;
@@ -115,12 +115,19 @@ export interface Player {
     ring: number;
     necklace: number;
   };
+  megaPet: {
+    unlocked: boolean;
+    level: number;
+    slots: Array<{ type: string | null }>;
+  };
 }
+
+export type Rarity = 'white' | 'green' | 'blue' | 'purple' | 'gold' | 'red';
 
 export interface Equipment {
   id: string;
   type: 'weapon' | 'armor' | 'pants' | 'gloves' | 'ring' | 'necklace';
-  rarity: 'white' | 'green' | 'blue' | 'purple' | 'gold' | 'red';
+  rarity: Rarity;
   level: number;
   stats: {
     health?: number;

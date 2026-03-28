@@ -1,7 +1,7 @@
 import { Player, Equipment } from '../types/game';
 import { ProgressBar, Card, Button, Dialog } from 'antd-mobile';
 import { useState } from 'react';
-import { getEnhanceCost, calculateAutoEnhance, getTotalStats, getArtifactEffectValue, getActivePetBonus, getItemConfig, getRebirthBonus } from '../utils/gameLogic';
+import { getEnhanceCost, calculateAutoEnhance, getTotalStats, getArtifactEffectValue, getActivePetBonus, getItemConfig, getRarityStyles } from '../utils/gameLogic';
 import { FormattedNumber } from './FormattedNumber';
 
 interface CharacterScreenProps {
@@ -33,10 +33,10 @@ export const CharacterScreen: React.FC<CharacterScreenProps> = ({ player, invent
     return `+${value}`;
   };
 
-  const getPlayerTotalStats = () => getTotalStats(player);
+  const playerStats = getTotalStats(player);
 
   const formatStatDisplay = (statKey: keyof typeof player.attributes) => {
-    const stats = getPlayerTotalStats();
+    const stats = playerStats;
 
     if (statKey === 'critRate' || statKey === 'critDamage') {
       const base = player.attributes[statKey];
@@ -110,17 +110,6 @@ export const CharacterScreen: React.FC<CharacterScreenProps> = ({ player, invent
     { type: 'necklace' as const, name: '項鍊' },
   ];
 
-  const getBorderColor = (rarity: Equipment['rarity']) => {
-    switch (rarity) {
-      case 'white': return '#ccc';
-      case 'green': return '#0f0';
-      case 'blue': return '#00f';
-      case 'purple': return '#f0f';
-      case 'gold': return '#ff0';
-      case 'red': return '#ff4444';
-      default: return '#ccc';
-    }
-  };
 
   return (
     <div style={{
@@ -204,9 +193,11 @@ export const CharacterScreen: React.FC<CharacterScreenProps> = ({ player, invent
             <div style={{ background: 'rgba(0, 0, 0, 0.3)', padding: '15px', borderRadius: '10px', border: '1px solid rgba(0, 229, 255, 0.3)', marginTop: '15px' }}>
               <h3 style={{ margin: '0 0 10px 0', color: '#00E5FF', textShadow: '0 0 5px rgba(0, 229, 255, 0.8)' }}>額外加成 (神器與寵物)</h3>
               <p style={{ margin: '5px 0', fontSize: '14px' }}>閃避率: {(getArtifactEffectValue(player, 'dodgeRate') * 100).toFixed(1)}%</p>
-              <p style={{ margin: '5px 0', fontSize: '14px' }}>經驗加成: {((getArtifactEffectValue(player, 'expGain') + getActivePetBonus(player, 'expGain') + getActivePetBonus(player, 'dualResource')) * 100).toFixed(1)}%</p>
-              <p style={{ margin: '5px 0', fontSize: '14px' }}>金幣加成: {((getArtifactEffectValue(player, 'goldGain') + getActivePetBonus(player, 'goldGain') + getActivePetBonus(player, 'dualResource')) * 100).toFixed(1)}%</p>
+              <p style={{ margin: '5px 0', fontSize: '14px' }}>經驗加成: {(playerStats.expGain * 100).toFixed(1)}%</p>
+              <p style={{ margin: '5px 0', fontSize: '14px' }}>金幣加成: {(playerStats.goldGain * 100).toFixed(1)}%</p>
               <p style={{ margin: '5px 0', fontSize: '14px' }}>關卡裝備額外掉落: +{(getActivePetBonus(player, 'dropRate') * 100).toFixed(1)}%</p>
+              {/* @ts-ignore */}
+              {playerStats.bossDamage > 0 && <p style={{ margin: '5px 0', fontSize: '14px' }}>Boss 傷害提昇: {(playerStats.bossDamage * 100).toFixed(1)}%</p>}
               <p style={{ margin: '5px 0', fontSize: '14px' }}>掛機強化石 ({getItemConfig('upgrade_stone').icon}) 掉落機率: {(5 + getArtifactEffectValue(player, 'upgradeStoneDropRate') * 100).toFixed(1)}%</p>
               <p style={{ margin: '5px 0', fontSize: '14px' }}>掛機幼龍碎片 ({getItemConfig('pet_upgrade_fragment').icon}) 掉落機率: {(2 + getArtifactEffectValue(player, 'petStoneDropRate') * 100).toFixed(1)}%</p>
             </div>
@@ -287,7 +278,7 @@ export const CharacterScreen: React.FC<CharacterScreenProps> = ({ player, invent
                     style={{
                       width: '90px',
                       height: '90px',
-                      border: eq ? `3px solid ${getBorderColor(eq.rarity)}` : '3px dashed rgba(255, 255, 255, 0.5)',
+                      border: eq ? `3px solid ${getRarityStyles(eq.rarity).color}` : '3px dashed rgba(255, 255, 255, 0.5)',
                       borderRadius: '10px',
                       display: 'flex',
                       flexDirection: 'column',
@@ -322,8 +313,8 @@ export const CharacterScreen: React.FC<CharacterScreenProps> = ({ player, invent
                         width: '8px',
                         height: '8px',
                         borderRadius: '50%',
-                        background: getBorderColor(eq.rarity),
-                        boxShadow: `0 0 5px ${getBorderColor(eq.rarity)}`
+                        background: getRarityStyles(eq.rarity).color,
+                        boxShadow: getRarityStyles(eq.rarity).boxShadow
                       }} />
                     )}
                     <div style={{
@@ -365,8 +356,8 @@ export const CharacterScreen: React.FC<CharacterScreenProps> = ({ player, invent
                 visible={!!selectedSlot}
                 title={
                   <span style={{
-                    color: eq ? getBorderColor(eq.rarity) : 'white',
-                    textShadow: eq ? '0 0 10px ' + getBorderColor(eq.rarity) : 'none',
+                    color: eq ? getRarityStyles(eq.rarity).color : 'white',
+                    textShadow: eq ? '0 0 10px ' + getRarityStyles(eq.rarity).color : 'none',
                     fontWeight: 'bold',
                     fontSize: '20px'
                   }}>
@@ -374,7 +365,7 @@ export const CharacterScreen: React.FC<CharacterScreenProps> = ({ player, invent
                   </span>
                 }
                 content={(
-                  <div className="equipment-dialog-content" style={{ border: '2px solid ' + (eq ? getBorderColor(eq.rarity) : '#666'), overflow: 'hidden' }}>
+                  <div className="equipment-dialog-content" style={{ border: '2px solid ' + (eq ? getRarityStyles(eq.rarity).color : '#666'), overflow: 'hidden' }}>
                     {eq ? (
                       <>
                         <p style={{ margin: '8px 0', fontSize: '16px' }}>
@@ -384,7 +375,7 @@ export const CharacterScreen: React.FC<CharacterScreenProps> = ({ player, invent
                           <span style={{ color: '#FFD700' }}>等級:</span> {eq.level}
                         </p>
                         <p style={{ margin: '8px 0', fontSize: '16px' }}>
-                          <span style={{ color: getBorderColor(eq.rarity) }}>稀有度:</span> {eq.rarity}
+                          <span style={{ color: getRarityStyles(eq.rarity).color }}>稀有度:</span> {eq.rarity}
                         </p>
                         {eq.mainStat && (
                           <>

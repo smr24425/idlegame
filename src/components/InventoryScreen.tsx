@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { GameState, Equipment } from '../types/game';
-import { getItemConfig, getEquipmentValue } from '../utils/gameLogic';
+import { getItemConfig, getEquipmentValue, getRarityStyles } from '../utils/gameLogic';
 import { Card, Button, Dialog, Checkbox } from 'antd-mobile';
 import { FormattedNumber } from './FormattedNumber';
 
@@ -32,17 +32,6 @@ export const InventoryScreen: React.FC<InventoryScreenProps> = ({ gameState, onE
     return `+${value}`;
   };
 
-  const getBorderColor = (rarity: Equipment['rarity']) => {
-    switch (rarity) {
-      case 'white': return '#ccc';
-      case 'green': return '#0f0';
-      case 'blue': return '#00f';
-      case 'purple': return '#f0f';
-      case 'gold': return '#ff0';
-      case 'red': return '#ff4444';
-      default: return '#ccc';
-    }
-  };
 
 
 
@@ -101,7 +90,7 @@ export const InventoryScreen: React.FC<InventoryScreenProps> = ({ gameState, onE
                   style={{
                     width: '80px',
                     height: '80px',
-                    border: `2px solid ${getBorderColor(eq.rarity)}`,
+                    border: `2px solid ${getRarityStyles(eq.rarity).color}`,
                     borderRadius: '10px',
                     display: 'flex',
                     flexDirection: 'column',
@@ -162,13 +151,16 @@ export const InventoryScreen: React.FC<InventoryScreenProps> = ({ gameState, onE
           <p style={{ color: 'var(--muted)' }}>沒有物品</p>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: '10px' }}>
-            {gameState.inventory.items.map(item => (
+            {gameState.inventory.items.map(item => {
+              const itemConfig = getItemConfig(item.id, item.name);
+              const itemStyle = getRarityStyles(itemConfig.rarity);
+              return (
               <div
                 key={item.id}
                 style={{
                   width: '80px',
                   height: '80px',
-                  border: `2px solid ${item.id === 'upgrade_stone' ? '#FFD700' : '#ccc'}`,
+                  border: `2px solid ${itemStyle.color}`,
                   borderRadius: '10px',
                   display: 'flex',
                   flexDirection: 'column',
@@ -176,14 +168,14 @@ export const InventoryScreen: React.FC<InventoryScreenProps> = ({ gameState, onE
                   justifyContent: 'center',
                   background: 'rgba(255, 255, 255, 0.06)',
                   position: 'relative',
-                  boxShadow: item.id === 'upgrade_stone' ? '0 0 15px rgba(255, 215, 0, 0.4)' : '0 8px 20px rgba(0, 0, 0, 0.35)',
+                  boxShadow: itemStyle.boxShadow,
                 }}
               >
                 <div style={{ fontSize: '24px', marginBottom: '4px' }}>
-                  {getItemConfig(item.id).icon}
+                  {itemConfig.icon}
                 </div>
-                <div style={{ fontSize: '10px', textAlign: 'center', fontWeight: 'bold', color: item.id === 'upgrade_stone' ? '#FFD700' : 'white' }}>
-                  {getItemConfig(item.id, item.name).name}
+                <div style={{ fontSize: '10px', textAlign: 'center', fontWeight: 'bold', color: itemStyle.color, textShadow: '0 0 5px rgba(0,0,0,0.8)' }}>
+                  {itemConfig.name}
                 </div>
                 <div style={{
                   position: 'absolute',
@@ -197,7 +189,7 @@ export const InventoryScreen: React.FC<InventoryScreenProps> = ({ gameState, onE
                   x<FormattedNumber value={item.quantity} />
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         )}
       </Card>
@@ -244,8 +236,8 @@ export const InventoryScreen: React.FC<InventoryScreenProps> = ({ gameState, onE
           visible={!!selectedEquipment}
           title={
             <span style={{
-              color: getBorderColor(selectedEquipment.rarity),
-              textShadow: '0 0 10px ' + getBorderColor(selectedEquipment.rarity),
+              color: getRarityStyles(selectedEquipment.rarity).color,
+              textShadow: '0 0 10px ' + getRarityStyles(selectedEquipment.rarity).color,
               fontWeight: 'bold',
               fontSize: '20px'
             }}>
@@ -255,7 +247,7 @@ export const InventoryScreen: React.FC<InventoryScreenProps> = ({ gameState, onE
           content={
             <div style={{ display: 'flex', gap: '16px' }}>
               {/* 顯示當前穿戴裝備 */}
-              {player && player.equipment[selectedEquipment.type] && player.equipment[selectedEquipment.type]?.type === selectedEquipment.type && <div className="equipment-dialog-content" style={{ flex: 1, border: '2px solid ' + getBorderColor(player.equipment[selectedEquipment.type]!.rarity) }}>
+              {player && player.equipment[selectedEquipment.type] && player.equipment[selectedEquipment.type]?.type === selectedEquipment.type && <div className="equipment-dialog-content" style={{ flex: 1, border: '2px solid ' + getRarityStyles(player.equipment[selectedEquipment.type]!.rarity).color }}>
                 <div style={{ fontSize: '16px', fontWeight: 'bold' }}>當前穿戴</div>
                 <p style={{ margin: '8px 0', fontSize: '16px' }}>
                   <span style={{ color: '#FFD700' }}>部位:</span> {getTypeName(player.equipment[selectedEquipment.type]!.type)}
@@ -264,7 +256,7 @@ export const InventoryScreen: React.FC<InventoryScreenProps> = ({ gameState, onE
                   <span style={{ color: '#FFD700' }}>裝備等級:</span> Lv.{player.equipment[selectedEquipment.type]!.level}
                 </p>
                 <p style={{ margin: '8px 0', fontSize: '16px' }}>
-                  <span style={{ color: getBorderColor(player.equipment[selectedEquipment.type]!.rarity) }}>稀有度:</span> {player.equipment[selectedEquipment.type]!.rarity}
+                  <span style={{ color: getRarityStyles(player.equipment[selectedEquipment.type]!.rarity).color }}>稀有度:</span> {player.equipment[selectedEquipment.type]!.rarity}
                 </p>
                 {player.equipment[selectedEquipment.type]!.mainStat && (
                   <>
@@ -291,7 +283,7 @@ export const InventoryScreen: React.FC<InventoryScreenProps> = ({ gameState, onE
               </div>}
 
               {/* 顯示裝備資訊 */}
-              <div className="equipment-dialog-content" style={{ flex: 1, border: '2px solid ' + getBorderColor(selectedEquipment.rarity) }}>
+              <div className="equipment-dialog-content" style={{ flex: 1, border: '2px solid ' + getRarityStyles(selectedEquipment.rarity).color }}>
                 <div style={{ fontSize: '16px', fontWeight: 'bold' }}>裝備</div>
 
                 <p style={{ margin: '8px 0', fontSize: '16px' }}>
@@ -301,7 +293,7 @@ export const InventoryScreen: React.FC<InventoryScreenProps> = ({ gameState, onE
                   <span style={{ color: '#FFD700' }}>裝備等級:</span> Lv.{selectedEquipment.level}
                 </p>
                 <p style={{ margin: '8px 0', fontSize: '16px' }}>
-                  <span style={{ color: getBorderColor(selectedEquipment.rarity) }}>稀有度:</span> {selectedEquipment.rarity}
+                  <span style={{ color: getRarityStyles(selectedEquipment.rarity).color }}>稀有度:</span> {selectedEquipment.rarity}
                 </p>
                 {selectedEquipment.mainStat && (
                   <>
