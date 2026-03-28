@@ -3,11 +3,14 @@ import { GameState } from '../types/game';
 import { Card, Button, Switch, Dialog } from 'antd-mobile';
 import { FormattedNumber } from './FormattedNumber';
 
+import { useDispatch } from 'react-redux';
+import { gameActions } from '../store/gameSlice';
+
 interface MegaPetScreenProps {
   gameState: GameState;
-  unlockMegaPet: () => { success: boolean; message: string };
-  rerollMegaPetStats: (lock0: boolean, lock1: boolean, lock2: boolean) => { success: boolean; message: string };
-  levelUpMegaPet: () => { success: boolean; message: string };
+  unlockMegaPet: (index: number) => { success: boolean; message: string };
+  rerollMegaPetStats: (index: number, lock0: boolean, lock1: boolean, lock2: boolean) => { success: boolean; message: string };
+  levelUpMegaPet: (index: number) => { success: boolean; message: string };
 }
 
 const statNames: Record<string, string> = {
@@ -45,6 +48,8 @@ const statBaseValues: Record<string, string> = {
 
 export const MegaPetScreen: React.FC<MegaPetScreenProps> = ({ gameState, unlockMegaPet, rerollMegaPetStats, levelUpMegaPet }) => {
   const [locks, setLocks] = useState<[boolean, boolean, boolean]>([false, false, false]);
+  const [viewIndex, setViewIndex] = useState(0);
+  const dispatch = useDispatch();
 
   const toggleLock = (index: number) => {
     const newLocks = [...locks] as [boolean, boolean, boolean];
@@ -53,31 +58,52 @@ export const MegaPetScreen: React.FC<MegaPetScreenProps> = ({ gameState, unlockM
   };
 
   const handleLevelUp = () => {
-    const res = levelUpMegaPet();
+    const res = levelUpMegaPet(viewIndex);
     Dialog.alert({ content: res.message });
   };
 
   const handleReroll = () => {
-    const res = rerollMegaPetStats(locks[0], locks[1], locks[2]);
+    const res = rerollMegaPetStats(viewIndex, locks[0], locks[1], locks[2]);
     if (!res.success) {
       Dialog.alert({ content: res.message });
     }
   };
 
   const handleUnlock = () => {
-    const res = unlockMegaPet();
+    const res = unlockMegaPet(viewIndex);
     Dialog.alert({ content: res.message });
   };
 
-  const { megaPet, rebirths, diamonds } = gameState.player;
+  const { megaPets, activeMegaPetIndex, rebirths, diamonds } = gameState.player;
+  const megaPet = megaPets ? megaPets[viewIndex] : null;
 
-  if (!megaPet.unlocked) {
+  const renderTabs = () => (
+    <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+      {[0, 1, 2].map((idx) => (
+        <Button
+          key={idx}
+          color={viewIndex === idx ? 'primary' : 'default'}
+          onClick={() => {
+            setViewIndex(idx);
+            setLocks([false, false, false]); // Reset locks on switch
+          }}
+          style={{ flex: 1 }}
+        >
+          {`萌獸 ${idx + 1}`}
+        </Button>
+      ))}
+    </div>
+  );
+
+  if (!megaPet || !megaPet.unlocked) {
+    const unlockCost = 200000000 * Math.pow(2, viewIndex);
     return (
       <div style={{ padding: '20px', height: '100%', overflow: 'auto' }}>
-        <Card title="萌獸系統解鎖" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--text)', textAlign: 'center' }}>
+        {renderTabs()}
+        <Card title={`萌獸系統解鎖 (萌獸 ${viewIndex + 1})`} style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--text)', textAlign: 'center' }}>
           <p>開啟條件：需要達成 2 次轉生</p>
           <p>目前轉生次數：{rebirths}</p>
-          <p>解鎖花費：5,000,000 鑽石</p>
+          <p>解鎖花費：{unlockCost.toLocaleString()} 鑽石</p>
           <Button color="primary" block disabled={rebirths < 2} onClick={handleUnlock}>
             解鎖萌獸
           </Button>
@@ -87,9 +113,9 @@ export const MegaPetScreen: React.FC<MegaPetScreenProps> = ({ gameState, unlockM
   }
 
   const lockedCount = locks.filter(l => l).length;
-  let rerollCost = 10000;
-  if (lockedCount === 1) rerollCost = 100000;
-  if (lockedCount === 2) rerollCost = 200000;
+  let rerollCost = 10000000;
+  if (lockedCount === 1) rerollCost = 20000000;
+  if (lockedCount === 2) rerollCost = 50000000;
 
   const fragmentItem = gameState.inventory.items.find(i => i.id === 'mega_pet_fragment');
   const shards = fragmentItem ? fragmentItem.quantity : 0;
@@ -97,7 +123,19 @@ export const MegaPetScreen: React.FC<MegaPetScreenProps> = ({ gameState, unlockM
 
   return (
     <div style={{ padding: '20px', height: '100%', overflow: 'auto' }}>
-      <Card title={`萌獸 (Lv. ${megaPet.level})`} style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--text)' }}>
+      {renderTabs()}
+      <Card title={`萌獸 ${viewIndex + 1} (Lv. ${megaPet.level})`} style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--text)' }}>
+
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '15px' }}>
+          <Button
+            color={activeMegaPetIndex === viewIndex ? 'success' : 'primary'}
+            fill={activeMegaPetIndex === viewIndex ? 'solid' : 'outline'}
+            onClick={() => { dispatch(gameActions.setActiveMegaPetIndex(activeMegaPetIndex === viewIndex ? null : viewIndex)); }}
+          >
+            {activeMegaPetIndex === viewIndex ? '⭐ 出戰中 ⭐' : '設為上陣'}
+          </Button>
+        </div>
+
         <p style={{ textAlign: 'center', color: '#00E5FF', fontWeight: 'bold' }}>
           鑽石: <FormattedNumber value={diamonds} /> | 萌獸碎片: <FormattedNumber value={shards} />
         </p>
@@ -129,7 +167,7 @@ export const MegaPetScreen: React.FC<MegaPetScreenProps> = ({ gameState, unlockM
 
         <div style={{ marginTop: '20px', textAlign: 'center' }}>
           <p style={{ color: 'var(--muted)', marginBottom: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            重製花費：{rerollCost.toLocaleString()} 鑽石
+            重製花費：<FormattedNumber value={rerollCost} /> 鑽石
             <span
               onClick={() => {
                 Dialog.alert({

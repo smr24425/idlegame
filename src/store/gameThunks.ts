@@ -8,21 +8,10 @@ export const collectRewards = () => (dispatch: AppDispatch, getState: () => Root
   const now = Date.now();
   const timeDiff = Math.floor((now - game.lastCollectTime) / 1000); 
 
-  const goldBonus = getActivePetBonus(game.player, 'goldGain');
-  const expBonus = getActivePetBonus(game.player, 'expGain');
-  const dropRateBonus = getActivePetBonus(game.player, 'dropRate');
-
-  const artifactGoldBonus = getArtifactEffectValue(game.player, 'goldGain');
-  const artifactExpBonus = getArtifactEffectValue(game.player, 'expGain');
-  const artifactUpgradeDropRate = getArtifactEffectValue(game.player, 'upgradeStoneDropRate');
-  const artifactPetStoneDropRate = getArtifactEffectValue(game.player, 'petStoneDropRate');
-
-  const rebirthBonus = getRebirthBonus(game.player);
-  const megaPetExpBonus = game.player.megaPet?.unlocked ? game.player.megaPet.slots.reduce((sum, slot) => sum + (slot.type === 'expGain' ? 3 * game.player.megaPet.level : 0), 0) : 0;
-  const megaPetGoldBonus = game.player.megaPet?.unlocked ? game.player.megaPet.slots.reduce((sum, slot) => sum + (slot.type === 'goldGain' ? 3 * game.player.megaPet.level : 0), 0) : 0;
-
-  const expGained = timeDiff * game.player.stage * 10 * (1 + expBonus + artifactExpBonus + rebirthBonus.expBonus + megaPetExpBonus);
-  const moneyGained = timeDiff * game.player.stage * 5 * (1 + goldBonus + artifactGoldBonus + rebirthBonus.goldBonus + megaPetGoldBonus);
+  const totalStats = getTotalStats(game.player);
+  
+  const expGained = timeDiff * game.player.stage * 10 * (1 + totalStats.expGain);
+  const moneyGained = timeDiff * game.player.stage * 5 * (1 + totalStats.goldGain);
 
   const minutes = Math.floor(timeDiff / 60);
   const equipments: Equipment[] = [];
@@ -30,11 +19,11 @@ export const collectRewards = () => (dispatch: AppDispatch, getState: () => Root
   let petStonesGained = 0;
 
   for (let i = 0; i < minutes; i++) {
-    const eq = generateEquipment(game.player.stage, 0.3, dropRateBonus);
+    const eq = generateEquipment(game.player.stage, 0.3, getActivePetBonus(game.player, 'dropRate'));
     if (eq) equipments.push(eq);
 
-    if (Math.random() < 0.05 + artifactUpgradeDropRate) upgradeStonesGained++;
-    if (Math.random() < 0.02 + artifactPetStoneDropRate) petStonesGained++;
+    if (Math.random() < 0.05 + getArtifactEffectValue(game.player, 'upgradeStoneDropRate')) upgradeStonesGained++;
+    if (Math.random() < 0.02 + getArtifactEffectValue(game.player, 'petStoneDropRate')) petStonesGained++;
   }
 
   dispatch(gameActions.addExpAndMoney({ exp: expGained, money: moneyGained }));
@@ -392,73 +381,60 @@ export const upgradeArtifact = (configId: string) => (dispatch: AppDispatch, get
     return { success: true, message: isUnlock ? '神器解鎖成功！' : '神器進階成功！' };
 };
 
-export const unlockMegaPet = () => (dispatch: AppDispatch, getState: () => RootState) => {
+export const unlockMegaPet = (index: number) => (dispatch: AppDispatch, getState: () => RootState) => {
     const { game } = getState();
     if (game.player.rebirths < 2) return { success: false, message: '需達成 2 次轉生' };
-    if (game.player.diamonds < 5000000) return { success: false, message: '鑽石不足 5,000,000' };
-
-    dispatch(gameActions.decreaseDiamonds(5000000));
-    const randomType = () => {
-        const weights = [293, 293, 293, 50, 50, 10, 10, 1];
-        const types = ['attack', 'defense', 'health', 'critRate', 'critDamage', 'expGain', 'goldGain', 'bossDamage'];
-        let w = Math.random() * 1000;
-        for (let i = 0; i < weights.length; i++) {
-          w -= weights[i];
-          if (w <= 0) return types[i];
-        }
-        return types[0];
-    };
+    const unlockingCost = 200000000 * Math.pow(2, index);
+    if (game.player.diamonds < unlockingCost) return { success: false, message: `鑽石不足！需要 ${unlockingCost.toLocaleString()} 鑽石` };
     
-    for(let i=0; i<3; i++) {
-         dispatch(gameActions.rerollMegaPetSlotSync({ slotIndex: i, newType: randomType(), cost: 0 }));
-    }
-    dispatch(gameActions.unlockMegaPetSync({ cost: 0 }));
-    
+    dispatch(gameActions.decreaseDiamonds(unlockingCost));
+    dispatch(gameActions.unlockMegaPetSync({ cost: 0, index }));
     return { success: true, message: '解鎖成功！' };
 };
 
-export const rerollMegaPetStats = (lock0: boolean, lock1: boolean, lock2: boolean) => (dispatch: AppDispatch, getState: () => RootState) => {
+export const rerollMegaPetStats = (index: number, lock0: boolean, lock1: boolean, lock2: boolean) => (dispatch: AppDispatch, getState: () => RootState) => {
     const { game } = getState();
-    const lockedCount = [lock0, lock1, lock2].filter(Boolean).length;
-    if (lockedCount === 3) return { success: false, message: '不能全部鎖定' };
-    
-    let cost = 10000;
-    if (lockedCount === 1) cost = 100000;
-    if (lockedCount === 2) cost = 200000;
-    if (game.player.diamonds < cost) return { success: false, message: `鑽石不足 ${cost}` };
+    const lockedCount = [lock0, lock1, lock2].filter(l => l).length;
+    let cost = 10000000;
+    if (lockedCount === 1) cost = 20000000;
+    if (lockedCount === 2) cost = 50000000;
+    if (lockedCount === 3) return { success: false, message: '不能全部鎖定！' };
+
+    if (game.player.diamonds < cost) return { success: false, message: `鑽石不足！需要 ${cost} 鑽石` };
 
     const randomType = () => {
-        const weights = [293, 293, 293, 50, 50, 10, 10, 1];
-        const types = ['attack', 'defense', 'health', 'critRate', 'critDamage', 'expGain', 'goldGain', 'bossDamage'];
-        let w = Math.random() * 1000;
-        for (let i = 0; i < weights.length; i++) {
-          w -= weights[i];
-          if (w <= 0) return types[i];
-        }
-        return types[0];
+        const rand = Math.random();
+        if (rand < 0.293) return 'attack';
+        if (rand < 0.586) return 'defense';
+        if (rand < 0.879) return 'health';
+        if (rand < 0.929) return 'critRate';
+        if (rand < 0.979) return 'critDamage';
+        if (rand < 0.989) return 'expGain';
+        if (rand < 0.999) return 'goldGain';
+        return 'bossDamage';
     };
 
     dispatch(gameActions.decreaseDiamonds(cost));
-    if (!lock0) dispatch(gameActions.rerollMegaPetSlotSync({ slotIndex: 0, newType: randomType(), cost: 0 }));
-    if (!lock1) dispatch(gameActions.rerollMegaPetSlotSync({ slotIndex: 1, newType: randomType(), cost: 0 }));
-    if (!lock2) dispatch(gameActions.rerollMegaPetSlotSync({ slotIndex: 2, newType: randomType(), cost: 0 }));
+    if (!lock0) dispatch(gameActions.rerollMegaPetSlotSync({ petIndex: index, slotIndex: 0, newType: randomType(), cost: 0 }));
+    if (!lock1) dispatch(gameActions.rerollMegaPetSlotSync({ petIndex: index, slotIndex: 1, newType: randomType(), cost: 0 }));
+    if (!lock2) dispatch(gameActions.rerollMegaPetSlotSync({ petIndex: index, slotIndex: 2, newType: randomType(), cost: 0 }));
 
     return { success: true, message: '重製成功！' };
 };
 
-export const levelUpMegaPet = () => (dispatch: AppDispatch, getState: () => RootState) => {
+export const levelUpMegaPet = (index: number) => (dispatch: AppDispatch, getState: () => RootState) => {
     const { game } = getState();
-    const cost = 100 + game.player.megaPet.level * 20;
+    const cost = 100 + game.player.megaPets[index].level * 20;
     const item = game.inventory.items.find((i: any) => i.id === 'mega_pet_fragment');
     if (!item || item.quantity < cost) return { success: false, message: `碎片不足！需要 ${cost} 碎片` };
     
-    dispatch(gameActions.upgradeMegaPetSync({ cost }));
+    dispatch(gameActions.upgradeMegaPetSync({ cost, index }));
     return { success: true, message: '升級成功' };
 };
 
 export const drawMegaPetGacha = (times: number) => (dispatch: AppDispatch, getState: () => RootState) => {
     const { game } = getState();
-    const cost = times * 100000;
+    const cost = times * 1000000;
     if (game.player.diamonds < cost) return { success: false, message: '鑽石不足' };
     
     let totalFrags = 0;

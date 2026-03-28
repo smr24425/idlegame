@@ -160,11 +160,12 @@ export const getTotalStats = (player: Player) => {
   const globalPets = getGlobalPetPassiveStats(player);
 
   const megaPetStats = { attack: 0, defense: 0, health: 0, critRate: 0, critDamage: 0, expGain: 0, goldGain: 0, bossDamage: 0 };
-  if (player.megaPet && player.megaPet.unlocked) {
-    player.megaPet.slots.forEach(slot => {
+  const activeMegaPet = player.activeMegaPetIndex !== null ? player.megaPets[player.activeMegaPetIndex] : null;
+  if (activeMegaPet && activeMegaPet.unlocked) {
+    activeMegaPet.slots.forEach(slot => {
       if (slot.type) {
         // @ts-ignore
-        megaPetStats[slot.type] += MEGA_PET_STAT_BASE[slot.type] + MEGA_PET_STAT_GROWTH[slot.type] * player.megaPet.level;
+        megaPetStats[slot.type] += MEGA_PET_STAT_BASE[slot.type] + MEGA_PET_STAT_GROWTH[slot.type] * activeMegaPet.level;
       }
     });
   }

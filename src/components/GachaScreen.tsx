@@ -211,7 +211,7 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
         </p>
 
         <p style={{ color: 'var(--muted)', fontSize: '14px', marginBottom: '20px' }}>
-          每抽取一次花費 100,000 {getItemConfig('diamonds').name}。<br />
+          每抽取一次花費 1,000,000 {getItemConfig('diamonds').name}。<br />
           每次抽取可獲得 1~2 個萌獸碎片！
         </p>
 
@@ -222,7 +222,7 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
           onClick={() => handleDrawMegaPet(1)}
           style={{ marginBottom: '15px', fontWeight: 'bold', borderRadius: '8px' }}
         >
-          單抽 ({getItemConfig('diamonds').icon} 100,000)
+          單抽 ({getItemConfig('diamonds').icon} <FormattedNumber value={1000000} />)
         </Button>
         <Button
           block
@@ -231,7 +231,7 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
           onClick={() => handleDrawMegaPet(10)}
           style={{ fontWeight: 'bold', borderRadius: '8px' }}
         >
-          十連抽 ({getItemConfig('diamonds').icon} 1,000,000)
+          十連抽 ({getItemConfig('diamonds').icon} <FormattedNumber value={10000000} />)
         </Button>
       </Card>
 
@@ -249,18 +249,19 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
             {resultEquipments.length > 0 ? resultEquipments.map((eq, idx) => {
               const rStyle = getRarityStyles(eq.rarity);
               return (
-              <div key={idx} style={{
-                border: `2px solid ${rStyle.color}`,
-                borderRadius: '8px',
-                padding: '5px',
-                textAlign: 'center',
-                background: 'rgba(0,0,0,0.3)',
-                boxShadow: rStyle.boxShadow
-              }}>
-                <div style={{ fontSize: '12px', color: 'var(--text)', fontWeight: 'bold' }}>{eq.name}</div>
-                <div style={{ fontSize: '10px', color: 'var(--muted)' }}>Lv {eq.level}</div>
-              </div>
-            )}) : <div style={{
+                <div key={idx} style={{
+                  border: `2px solid ${rStyle.color}`,
+                  borderRadius: '8px',
+                  padding: '5px',
+                  textAlign: 'center',
+                  background: 'rgba(0,0,0,0.3)',
+                  boxShadow: rStyle.boxShadow
+                }}>
+                  <div style={{ fontSize: '12px', color: 'var(--text)', fontWeight: 'bold' }}>{eq.name}</div>
+                  <div style={{ fontSize: '10px', color: 'var(--muted)' }}>Lv {eq.level}</div>
+                </div>
+              )
+            }) : <div style={{
               visibility: 'hidden',
               border: `2px solid`,
               borderRadius: '8px',
@@ -422,24 +423,24 @@ export const GachaScreen: React.FC<GachaScreenProps> = ({ gameState, onDraw, onD
         content={
           <div style={{ maxHeight: '300px', overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: '10px' }}>
             {megaPetResults.map((r, idx) => {
-               const itemConfig = getItemConfig('mega_pet_fragment');
-               const rStyle = getRarityStyles(itemConfig.rarity);
-               return (
-                 <div key={idx} style={{
-                   border: `2px solid ${rStyle.color}`,
-                   borderRadius: '8px',
-                   padding: '5px',
-                   textAlign: 'center',
-                   background: 'rgba(0,0,0,0.3)',
-                   boxShadow: rStyle.boxShadow,
-                 }}>
-                   <div style={{ fontSize: '24px', marginBottom: '4px' }}>{itemConfig.icon}</div>
-                   <div style={{ fontSize: '10px', color: rStyle.color, fontWeight: 'bold' }}>
-                     {itemConfig.name}
-                   </div>
-                   <div style={{ fontSize: '12px', color: 'var(--text)', marginTop: '2px', fontWeight: 'bold' }}>x{r.amount}</div>
-                 </div>
-               );
+              const itemConfig = getItemConfig('mega_pet_fragment');
+              const rStyle = getRarityStyles(itemConfig.rarity);
+              return (
+                <div key={idx} style={{
+                  border: `2px solid ${rStyle.color}`,
+                  borderRadius: '8px',
+                  padding: '5px',
+                  textAlign: 'center',
+                  background: 'rgba(0,0,0,0.3)',
+                  boxShadow: rStyle.boxShadow,
+                }}>
+                  <div style={{ fontSize: '24px', marginBottom: '4px' }}>{itemConfig.icon}</div>
+                  <div style={{ fontSize: '10px', color: rStyle.color, fontWeight: 'bold' }}>
+                    {itemConfig.name}
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text)', marginTop: '2px', fontWeight: 'bold' }}>x{r.amount}</div>
+                </div>
+              );
             })}
           </div>
         }

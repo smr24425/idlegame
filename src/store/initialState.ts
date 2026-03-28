@@ -41,9 +41,10 @@ export const initialPlayer: Player = {
     necklace: 0,
   },
   rebirths: 0,
-  megaPet: {
-    unlocked: false,
-    level: 1,
-    slots: [{ type: null }, { type: null }, { type: null }]
-  }
+  megaPets: [
+    { unlocked: false, level: 1, slots: [{ type: null }, { type: null }, { type: null }] },
+    { unlocked: false, level: 1, slots: [{ type: null }, { type: null }, { type: null }] },
+    { unlocked: false, level: 1, slots: [{ type: null }, { type: null }, { type: null }] }
+  ],
+  activeMegaPetIndex: null,
 };

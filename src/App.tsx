@@ -58,6 +58,7 @@ const tabs = [
 ];
 
 function App() {
+  const hasLocalData = !!localStorage.getItem('idleGameState');
   const [isStarted, setIsStarted] = useState(false);
   const [autoChallenge, setAutoChallenge] = useState(false);
   const [exchangeModalVisible, setExchangeModalVisible] = useState(false);
@@ -65,7 +66,7 @@ function App() {
 
   // Auth state
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(!hasLocalData);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isManualLogin, setIsManualLogin] = useState(false);
   const isFirstLoad = useRef(true);
@@ -210,9 +211,9 @@ function App() {
           {uiState.activeKey === "megapet" && (
             <MegaPetScreen
               gameState={gameState}
-              unlockMegaPet={() => dispatch(unlockMegaPet()) as any}
-              rerollMegaPetStats={(l0, l1, l2) => dispatch(rerollMegaPetStats(l0, l1, l2)) as any}
-              levelUpMegaPet={() => dispatch(levelUpMegaPet()) as any}
+              unlockMegaPet={(index) => dispatch(unlockMegaPet(index)) as any}
+              rerollMegaPetStats={(index, l0, l1, l2) => dispatch(rerollMegaPetStats(index, l0, l1, l2)) as any}
+              levelUpMegaPet={(index) => dispatch(levelUpMegaPet(index)) as any}
             />
           )}
           {uiState.activeKey === "artifacts" && (
@@ -255,9 +256,7 @@ function App() {
   }, []);
 
   const handleCloudStart = async () => {
-    if (!currentUser) return;
-
-    if (isManualLogin) {
+    if (currentUser && isManualLogin) {
       Toast.show({ icon: 'loading', content: '載入雲端資料中...', duration: 0 });
       const cloudState = await downloadCloudSave(currentUser.uid);
       Toast.clear();
@@ -268,8 +267,28 @@ function App() {
     setIsStarted(true);
   };
 
+  const handleManualSync = async () => {
+    if (!currentUser) {
+      Toast.show('尚未登入，請稍後再試。若在無網路狀態下將無法備份。');
+      return;
+    }
+    setIsSyncing(true);
+    Toast.show({ icon: 'loading', content: '同步資料中...', duration: 0 });
+    const success = await uploadCloudSave(currentUser.uid, gameState);
+    Toast.clear();
+    setIsSyncing(false);
+    if (success) {
+      Toast.show('同步成功！進度已備份至雲端。');
+    } else {
+      Toast.show('同步失敗，請稍後再試。');
+    }
+  };
+
   const handleManualDownload = async () => {
-    if (!currentUser) return;
+    if (!currentUser) {
+      Toast.show('尚未登入，請稍後再試。若在無網路狀態下將無法下載。');
+      return;
+    }
     Toast.show({ icon: 'loading', content: '下載雲端資料中...', duration: 0 });
     const cloudState = await downloadCloudSave(currentUser.uid);
     Toast.clear();
@@ -295,37 +314,36 @@ function App() {
     }
   };
 
-  const handleManualSync = async () => {
-    if (!currentUser) return;
-    setIsSyncing(true);
-    Toast.show({ icon: 'loading', content: '同步資料中...', duration: 0 });
-    const success = await uploadCloudSave(currentUser.uid, gameState);
-    Toast.clear();
-    setIsSyncing(false);
-    if (success) {
-      Toast.show('同步成功！進度已備份至雲端。');
-    } else {
-      Toast.show('同步失敗，請稍後再試。');
-    }
-  };
-
-  if (authLoading) {
-    return (
-      <div style={{ display: 'flex', height: '100vh', width: '100%', justifyContent: 'center', alignItems: 'center', background: '#000', color: '#FFF' }}>
-        系統載入中...
-      </div>
-    );
-  }
-
-  if (!currentUser) {
-    return <AuthScreen />;
-  }
-
   if (!isStarted) {
+    if (hasLocalData) {
+      return (
+        <ConfigProvider>
+          <StartScreen
+            userEmail={currentUser?.email || ''}
+            isSyncing={isSyncing}
+            onLogout={handleCloudLogout}
+            onStart={handleCloudStart}
+          />
+        </ConfigProvider>
+      );
+    }
+
+    if (authLoading) {
+      return (
+        <div style={{ display: 'flex', height: '100vh', width: '100%', justifyContent: 'center', alignItems: 'center', background: '#000', color: '#FFF' }}>
+          系統載入中...
+        </div>
+      );
+    }
+
+    if (!currentUser) {
+      return <AuthScreen />;
+    }
+
     return (
       <ConfigProvider>
         <StartScreen
-          userEmail={currentUser.email}
+          userEmail={currentUser?.email || ''}
           isSyncing={isSyncing}
           onLogout={handleCloudLogout}
           onStart={handleCloudStart}

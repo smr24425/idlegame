@@ -23,7 +23,20 @@ const getInitialState = (): GameState => {
     parsed.player.pets = parsed.player.pets || {};
     if (parsed.player.equippedPetId === undefined) parsed.player.equippedPetId = null;
     parsed.player.rebirths = parsed.player.rebirths || 0;
-    parsed.player.megaPet = parsed.player.megaPet || { unlocked: false, level: 1, slots: [{ type: null }, { type: null }, { type: null }] };
+    // 萌獸系統轉移相容
+    if (parsed.player.megaPet) {
+      const oldMegaPet = parsed.player.megaPet;
+      parsed.player.megaPets = [oldMegaPet, { unlocked: false, level: 1, slots: [{ type: null }, { type: null }, { type: null }] }, { unlocked: false, level: 1, slots: [{ type: null }, { type: null }, { type: null }] }];
+      parsed.player.activeMegaPetIndex = oldMegaPet.unlocked ? 0 : null;
+      delete parsed.player.megaPet;
+    } else if (!parsed.player.megaPets) {
+      parsed.player.megaPets = [
+        { unlocked: false, level: 1, slots: [{ type: null }, { type: null }, { type: null }] },
+        { unlocked: false, level: 1, slots: [{ type: null }, { type: null }, { type: null }] },
+        { unlocked: false, level: 1, slots: [{ type: null }, { type: null }, { type: null }] }
+      ];
+      parsed.player.activeMegaPetIndex = null;
+    }
     parsed.inventory = { equipment: parsed.inventory?.equipment || [], items: parsed.inventory?.items || [] };
     parsed.player.slotLevels = { ...initialPlayer.slotLevels, ...parsed.player.slotLevels };
     return parsed;
@@ -204,6 +217,9 @@ export const gameSlice = createSlice({
       state.player.artifacts[action.payload.id].fragments -= action.payload.cost;
       state.player.artifacts[action.payload.id].level += 1;
     },
+    setActiveMegaPetIndex: (state, action: PayloadAction<number | null>) => {
+      state.player.activeMegaPetIndex = action.payload;
+    },
     equipArtifactSync(state, action: PayloadAction<{ slot: number, id: string }>) {
       state.player.equippedArtifactIds[action.payload.slot] = action.payload.id;
     },
@@ -222,20 +238,21 @@ export const gameSlice = createSlice({
       if (fIdx >= 0) state.inventory.items[fIdx].quantity += action.payload.fragmentsGot;
       else state.inventory.items.push({ id: 'mega_pet_fragment', name: '萌獸碎片', type: 'material', quantity: action.payload.fragmentsGot });
     },
-    unlockMegaPetSync(state, action: PayloadAction<{ cost: number }>) {
+    unlockMegaPetSync(state, action: PayloadAction<{ cost: number, index: number }>) {
       const idx = state.inventory.items.findIndex(i => i.id === 'mega_pet_fragment');
       if (idx >= 0) state.inventory.items[idx].quantity -= action.payload.cost;
-      state.player.megaPet.unlocked = true;
+      state.player.megaPets[action.payload.index].unlocked = true;
+      if (state.player.activeMegaPetIndex === null) state.player.activeMegaPetIndex = action.payload.index;
     },
-    upgradeMegaPetSync(state, action: PayloadAction<{ cost: number }>) {
+    upgradeMegaPetSync(state, action: PayloadAction<{ cost: number, index: number }>) {
       const idx = state.inventory.items.findIndex(i => i.id === 'mega_pet_fragment');
       if (idx >= 0) state.inventory.items[idx].quantity -= action.payload.cost;
-      state.player.megaPet.level += 1;
+      state.player.megaPets[action.payload.index].level += 1;
     },
-    rerollMegaPetSlotSync(state, action: PayloadAction<{ slotIndex: number, newType: string, cost: number }>) {
+    rerollMegaPetSlotSync(state, action: PayloadAction<{ petIndex: number, slotIndex: number, newType: string, cost: number }>) {
       const idx = state.inventory.items.findIndex(i => i.id === 'mega_pet_fragment');
       if (idx >= 0) state.inventory.items[idx].quantity -= action.payload.cost;
-      state.player.megaPet.slots[action.payload.slotIndex].type = action.payload.newType;
+      state.player.megaPets[action.payload.petIndex].slots[action.payload.slotIndex].type = action.payload.newType;
     },
     rebirthSync(state, action: PayloadAction<any>) {
       Object.assign(state, action.payload);

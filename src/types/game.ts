@@ -115,11 +115,12 @@ export interface Player {
     ring: number;
     necklace: number;
   };
-  megaPet: {
+  megaPets: Array<{
     unlocked: boolean;
     level: number;
     slots: Array<{ type: string | null }>;
-  };
+  }>;
+  activeMegaPetIndex: number | null;
 }
 
 export type Rarity = 'white' | 'green' | 'blue' | 'purple' | 'gold' | 'red';
