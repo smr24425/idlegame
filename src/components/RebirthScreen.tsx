@@ -1,6 +1,6 @@
 import { Card, Button, Dialog } from 'antd-mobile';
 import { GameState } from '../types/game';
-import { getRebirthAttributeBonus, getRebirthBonus } from '../utils/gameLogic';
+import { getRebirthAttributeBonus, getRebirthBonus } from '../utils/logic';
 
 interface RebirthScreenProps {
   gameState: GameState;

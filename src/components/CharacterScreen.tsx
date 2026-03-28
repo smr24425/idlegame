@@ -1,7 +1,7 @@
 import { Player, Equipment } from '../types/game';
 import { ProgressBar, Card, Button, Dialog } from 'antd-mobile';
 import { useState } from 'react';
-import { getEnhanceCost, calculateAutoEnhance, getTotalStats, getArtifactEffectValue, getActivePetBonus, getItemConfig, getRarityStyles } from '../utils/gameLogic';
+import { getEnhanceCost, calculateAutoEnhance, getTotalStats, getArtifactEffectValue, getActivePetBonus, getItemConfig, getRarityStyles } from '../utils/logic';
 import { FormattedNumber } from './FormattedNumber';
 
 interface CharacterScreenProps {

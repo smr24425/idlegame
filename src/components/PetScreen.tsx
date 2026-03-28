@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { GameState, PetConfig } from '../types/game';
-import { PET_CONFIGS, PET_UPGRADE_COSTS, calculateBulkPetSlotUpgrade } from '../utils/gameLogic';
+import { PET_CONFIGS, PET_UPGRADE_COSTS, calculateBulkPetSlotUpgrade } from '../utils/logic';
 import { FormattedNumber } from './FormattedNumber';
-import { getItemConfig } from '../utils/gameLogic';
+import { getItemConfig } from '../utils/logic';
 import { Card, Button, Toast, Dialog } from 'antd-mobile';
 
 interface PetScreenProps {

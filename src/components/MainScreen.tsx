@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { GameState } from '../types/game';
 import { Button, Card, Switch } from 'antd-mobile';
-import { getTotalStats } from '../utils/gameLogic';
+import { getTotalStats } from '../utils/logic';
 import { FormattedNumber } from './FormattedNumber';
 
 interface MainScreenProps {

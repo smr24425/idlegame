@@ -1,6 +1,16 @@
 import { ConfigProvider, TabBar, Dialog, Toast } from "antd-mobile";
-import { useState, useEffect, useRef } from "react";
-import { useGameState } from "./hooks/useGameState";
+import { useState, useRef, useEffect } from "react";
+import { useDispatch, useSelector, Provider } from "react-redux";
+import { store, RootState, AppDispatch } from "./store/store";
+import {
+  collectRewards, startFight, endFight, autoEquipBest, doRebirth,
+  enhanceSlot, applyAutoEnhance, sellItemsByFilter, drawGacha,
+  drawPetGacha, drawArtifactGacha, drawMegaPetGacha, upgradePetSlot,
+  bulkUpgradePetSlot, upgradePet, unlockMegaPet, rerollMegaPetStats,
+  levelUpMegaPet, upgradeArtifact, exchangeGoldForDiamonds
+} from "./store/gameThunks";
+import { gameActions } from "./store/gameSlice";
+import { useGameLoop } from "./hooks/useGameLoop";
 import { useUIState } from "./hooks/useUIState";
 import { TopBar } from "./components/TopBar";
 import { MainScreen } from "./components/MainScreen";
@@ -14,7 +24,7 @@ import { PetScreen } from "./components/PetScreen";
 import { ArtifactScreen } from "./components/ArtifactScreen";
 import { AuthScreen } from "./components/AuthScreen";
 import { RebirthScreen } from "./components/RebirthScreen";
-import { generateEquipment, getActivePetBonus, getItemConfig } from "./utils/gameLogic";
+import { generateEquipment, getActivePetBonus, getItemConfig } from "./utils/logic";
 import { auth } from "./firebase";
 import { onAuthStateChanged, User, signOut } from "firebase/auth";
 import { uploadCloudSave, downloadCloudSave } from "./utils/cloudSync";
@@ -61,38 +71,9 @@ function App() {
   const isFirstLoad = useRef(true);
 
   // ...
-  const {
-    gameState,
-    collectRewards,
-    allocatePoint,
-    startFight,
-    endFight,
-    equipItem,
-    unequipItem,
-    autoEquipBest,
-    addEquipmentToInventory,
-    sellItem,
-    sellItemsByFilter,
-    drawGacha,
-    enhanceSlot,
-    applyAutoEnhance,
-    exchangeGoldForDiamonds,
-    drawPetGacha,
-    upgradePetSlot,
-    bulkUpgradePetSlot,
-    upgradePet,
-    equipPet,
-    drawArtifactGacha,
-    upgradeArtifact,
-    equipArtifact,
-    unequipArtifact,
-    loadCloudState,
-    doRebirth,
-    unlockMegaPet,
-    rerollMegaPetStats,
-    levelUpMegaPet,
-    drawMegaPetGacha,
-  } = useGameState();
+  const dispatch = useDispatch<AppDispatch>();
+  const gameState = useSelector((state: RootState) => state.game);
+  useGameLoop();
   const {
     uiState,
     setActiveKey,
@@ -102,7 +83,7 @@ function App() {
   } = useUIState();
 
   const handleCollect = () => {
-    const result = collectRewards();
+    const result = dispatch(collectRewards());
     setCollectDialog({
       visible: true,
       exp: result.expGained,
@@ -113,7 +94,7 @@ function App() {
   };
 
   const handleChallengeBoss = () => {
-    startFight();
+    dispatch(startFight());
     setActiveKey("combat"); // Switch to combat screen
   };
 
@@ -122,14 +103,14 @@ function App() {
     finalPlayerHealth: number,
   ) => {
     // End the fight in state (advances stage / rewards on win, stops fighting)
-    endFight(result, finalPlayerHealth);
+    dispatch(endFight(result, finalPlayerHealth));
 
     // Drop equipment based on the stage you just cleared
     if (result === "win") {
       const dropBonus = getActivePetBonus(gameState.player, 'dropRate');
       const equipment = generateEquipment(gameState.player.stage, 0.3, dropBonus);
       if (equipment) {
-        addEquipmentToInventory(equipment);
+        dispatch(gameActions.addEquipments([equipment]));
       }
 
       if (autoChallenge) {
@@ -137,16 +118,18 @@ function App() {
           content: `挑戰成功！掉落裝備：${equipment ? equipment.name : '無'}`,
           duration: 1200,
         });
-        startFight();
+        dispatch(startFight());
         return; // Skip dialog tracking entirely
       }
-    } else {
-      if (autoChallenge) {
-        setAutoChallenge(false); // Stop auto challenge on loss
-      }
-    }
 
-    setFightResultDialog({ visible: true, result });
+      setFightResultDialog({
+        visible: true,
+        result: "win",
+      });
+    } else {
+      setAutoChallenge(false); // Disable auto on death
+      setFightResultDialog({ visible: true, result: "lose" });
+    }
   };
 
   const closeFightResult = () => {
@@ -155,108 +138,104 @@ function App() {
   };
 
   const renderContent = () => {
-    if (uiState.activeKey === "combat" && gameState.isFighting) {
-      return (
-        <CombatScreen
-          gameState={gameState}
-          onFightEnd={handleFightEnd}
-          autoChallenge={autoChallenge}
-          setAutoChallenge={setAutoChallenge}
-        />
-      );
-    }
-    switch (uiState.activeKey) {
-      case "main":
-        return (
-          <MainScreen
-            gameState={gameState}
-            onCollect={handleCollect}
-            onChallengeBoss={handleChallengeBoss}
-            autoChallenge={autoChallenge}
-            setAutoChallenge={setAutoChallenge}
-            onNavigate={setActiveKey}
-          />
-        );
-      case "character":
-        return (
-          <CharacterScreen
-            player={gameState.player}
-            inventoryStones={gameState.inventory.items.find(i => i.id === 'upgrade_stone')?.quantity || 0}
-            onOpenAttributes={() => setShowAttributes(true)}
-            onUnequip={unequipItem}
-            onAutoEquipBest={autoEquipBest}
-            onEnhanceSlot={(type) => {
-              const res = enhanceSlot(type);
-              if (!res.success && res.message) {
-                Dialog.alert({ content: res.message });
-              }
-            }}
-            onApplyAutoEnhance={applyAutoEnhance}
-          />
-        );
-      case "inventory":
-        return (
-          <InventoryScreen
-            gameState={gameState}
-            onEquip={(id: string) => {
-              const eq = gameState.inventory.equipment.find((e) => e.id === id);
-              if (eq) equipItem(eq);
-            }}
-            onSell={(id: string) => sellItem(id)}
-            onBulkSell={(filters: number[]) => sellItemsByFilter(filters)}
-          />
-        );
-      case "gacha":
-        return (
-          <GachaScreen
-            gameState={gameState}
-            onDraw={drawGacha}
-            onDrawPet={drawPetGacha}
-            onDrawArtifact={drawArtifactGacha}
-            onDrawMegaPet={drawMegaPetGacha}
-          />
-        );
-      case "pets":
-        return (
-          <PetScreen
-            gameState={gameState}
-            upgradePetSlot={upgradePetSlot}
-            bulkUpgradePetSlot={bulkUpgradePetSlot}
-            upgradePet={upgradePet}
-            equipPet={equipPet}
-          />
-        );
-      case "artifacts":
-        return (
-          <ArtifactScreen
-            gameState={gameState}
-            upgradeArtifact={upgradeArtifact}
-            equipArtifact={equipArtifact}
-            unequipArtifact={unequipArtifact}
-          />
-        );
-      case "rebirth":
-        return (
-          <RebirthScreen
-            gameState={gameState}
-            onRebirth={() => {
-              doRebirth();
-              setActiveKey('main');
-            }}
-          />
-        );
-      case "megapet":
-        return (
-          <MegaPetScreen
-            gameState={gameState}
-            unlockMegaPet={unlockMegaPet}
-            rerollMegaPetStats={rerollMegaPetStats}
-            levelUpMegaPet={levelUpMegaPet}
-          />
-        );
-      default:
-        return null;
-    }
+    return (
+      <>
+        <div className="content">
+          {uiState.activeKey === "main" && (
+            <MainScreen
+              gameState={gameState}
+              onCollect={handleCollect}
+              onChallengeBoss={handleChallengeBoss}
+              autoChallenge={autoChallenge}
+              setAutoChallenge={setAutoChallenge}
+              onNavigate={setActiveKey}
+            />
+          )}
+          {uiState.activeKey === "character" && (
+            <CharacterScreen
+              player={gameState.player}
+              inventoryStones={gameState.inventory.items.find(i => i.id === 'upgrade_stone')?.quantity || 0}
+              onOpenAttributes={() => setShowAttributes(true)}
+              onUnequip={(type) => dispatch(gameActions.unequipItem(type))}
+              onAutoEquipBest={() => dispatch(autoEquipBest())}
+              onEnhanceSlot={(type) => {
+                const res = dispatch(enhanceSlot(type)) as any;
+                if (!res?.success && res?.message) {
+                  Dialog.alert({ content: res.message });
+                }
+              }}
+              onApplyAutoEnhance={() => {
+                const res = dispatch(applyAutoEnhance()) as any;
+                return res?.canUpgradeAny || false;
+              }}
+            />
+          )}
+          {uiState.activeKey === "inventory" && (
+            <InventoryScreen
+              gameState={gameState}
+              onEquip={(id: string) => {
+                const eq = gameState.inventory.equipment.find(e => e.id === id);
+                if (eq) dispatch(gameActions.equipItem(eq));
+              }}
+              onSell={(id: string) => dispatch(gameActions.sellItem(id))}
+              onBulkSell={(filters: number[]) => dispatch(sellItemsByFilter(filters))}
+            />
+          )}
+          {uiState.activeKey === "combat" && (
+            <CombatScreen
+              gameState={gameState}
+              onFightEnd={handleFightEnd}
+              autoChallenge={autoChallenge}
+              setAutoChallenge={setAutoChallenge}
+            />
+          )}
+          {uiState.activeKey === "gacha" && (
+            <GachaScreen
+              gameState={gameState}
+              onDraw={(times, autoSell) => dispatch(drawGacha(times, autoSell)) as any}
+              onDrawPet={(times) => dispatch(drawPetGacha(times)) as any}
+              onDrawArtifact={(times) => dispatch(drawArtifactGacha(times)) as any}
+              onDrawMegaPet={(times) => dispatch(drawMegaPetGacha(times)) as any}
+            />
+          )}
+          {uiState.activeKey === "pets" && (
+            <PetScreen
+              gameState={gameState}
+              equipPet={(id) => dispatch(gameActions.setEquippedPet(id))}
+              upgradePetSlot={() => dispatch(upgradePetSlot()) as any}
+              bulkUpgradePetSlot={() => dispatch(bulkUpgradePetSlot()) as any}
+              upgradePet={(id) => dispatch(upgradePet(id)) as any}
+            />
+          )}
+          {uiState.activeKey === "megapet" && (
+            <MegaPetScreen
+              gameState={gameState}
+              unlockMegaPet={() => dispatch(unlockMegaPet()) as any}
+              rerollMegaPetStats={(l0, l1, l2) => dispatch(rerollMegaPetStats(l0, l1, l2)) as any}
+              levelUpMegaPet={() => dispatch(levelUpMegaPet()) as any}
+            />
+          )}
+          {uiState.activeKey === "artifacts" && (
+            <ArtifactScreen
+              gameState={gameState}
+              upgradeArtifact={(id) => dispatch(upgradeArtifact(id)) as any}
+              equipArtifact={(id, slot) => dispatch(gameActions.equipArtifactSync({ slot, id }))}
+              unequipArtifact={(slot) => dispatch(gameActions.unequipArtifactSync({ slot }))}
+            />
+          )}
+          {uiState.activeKey === "rebirth" && (
+            <RebirthScreen
+              gameState={gameState}
+              onRebirth={() => {
+                dispatch(doRebirth());
+                setActiveKey('main');
+              }}
+            />
+          )}
+        </div>
+
+      </>
+    );
   };
 
   // Auth Effect hooks
@@ -266,7 +245,6 @@ function App() {
       if (isFirstLoad.current) {
         isFirstLoad.current = false;
       } else {
-        // If user changed after first load AND user exists, it's a manual login
         if (user) {
           setIsManualLogin(true);
         }
@@ -279,12 +257,11 @@ function App() {
   const handleCloudStart = async () => {
     if (!currentUser) return;
 
-    // 只有在剛手動輸入帳號密碼登入時，才去雲端抓資料。如是自動登入則直接用本地資料
     if (isManualLogin) {
       Toast.show({ icon: 'loading', content: '載入雲端資料中...', duration: 0 });
       const cloudState = await downloadCloudSave(currentUser.uid);
       Toast.clear();
-      loadCloudState(cloudState);
+      if (cloudState) dispatch(gameActions.setState(cloudState));
       setIsManualLogin(false);
     }
 
@@ -297,7 +274,7 @@ function App() {
     const cloudState = await downloadCloudSave(currentUser.uid);
     Toast.clear();
     if (cloudState) {
-      loadCloudState(cloudState);
+      dispatch(gameActions.setState(cloudState));
       Toast.show('已成功下載雲端進度！');
     } else {
       Toast.show('雲端沒有發現存檔紀錄。');
@@ -407,7 +384,7 @@ function App() {
 
         <AttributePanel
           player={gameState.player}
-          allocatePoint={allocatePoint}
+          allocatePoint={(attr) => dispatch(gameActions.allocatePoint(attr))}
           visible={uiState.showAttributes}
           onClose={() => setShowAttributes(false)}
         />
@@ -485,7 +462,7 @@ function App() {
                   Toast.show('金幣不足');
                   return;
                 }
-                exchangeGoldForDiamonds(amount);
+                dispatch(exchangeGoldForDiamonds(amount));
                 Toast.show('兌換成功！');
                 setExchangeModalVisible(false);
               }
@@ -502,4 +479,10 @@ function App() {
   );
 }
 
-export default App;
+export default function AppWrapper() {
+  return (
+    <Provider store={store}>
+      <App />
+    </Provider>
+  );
+}

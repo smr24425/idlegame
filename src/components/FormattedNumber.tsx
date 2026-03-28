@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatNumber } from '../utils/gameLogic';
+import { formatNumber } from '../utils/logic';
 
 interface FormattedNumberProps {
   value: number;

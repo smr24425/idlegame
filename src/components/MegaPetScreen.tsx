@@ -22,6 +22,17 @@ const statNames: Record<string, string> = {
 };
 
 const statValues: Record<string, string> = {
+  attack: '10%',
+  defense: '10%',
+  health: '10%',
+  critRate: '1%',
+  critDamage: '200%',
+  expGain: '10%',
+  goldGain: '10%',
+  bossDamage: '10%'
+};
+
+const statBaseValues: Record<string, string> = {
   attack: '60%',
   defense: '60%',
   health: '60%',
@@ -59,7 +70,7 @@ export const MegaPetScreen: React.FC<MegaPetScreenProps> = ({ gameState, unlockM
   };
 
   const { megaPet, rebirths, diamonds } = gameState.player;
-  
+
   if (!megaPet.unlocked) {
     return (
       <div style={{ padding: '20px', height: '100%', overflow: 'auto' }}>
@@ -82,7 +93,7 @@ export const MegaPetScreen: React.FC<MegaPetScreenProps> = ({ gameState, unlockM
 
   const fragmentItem = gameState.inventory.items.find(i => i.id === 'mega_pet_fragment');
   const shards = fragmentItem ? fragmentItem.quantity : 0;
-  const levelUpCost = megaPet.level * 10;
+  const levelUpCost = 100 + megaPet.level * 20;
 
   return (
     <div style={{ padding: '20px', height: '100%', overflow: 'auto' }}>
@@ -96,13 +107,17 @@ export const MegaPetScreen: React.FC<MegaPetScreenProps> = ({ gameState, unlockM
             <div key={index} style={{ border: '1px solid rgba(255, 215, 0, 0.25)', padding: '10px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)' }}>
               <div>
                 <span style={{ fontWeight: 'bold', fontSize: '18px', color: 'var(--accent)' }}>{slot.type ? statNames[slot.type] : '未解鎖'}</span>
-                {slot.type && <div style={{ color: 'var(--muted)', fontSize: '12px', marginTop: '4px' }}>每級加成: +{statValues[slot.type]}</div>}
+                {slot.type && (
+                  <div style={{ color: 'var(--muted)', fontSize: '12px', marginTop: '4px' }}>
+                    <span style={{ color: '#00E5FF' }}>總加成:</span> 基本 {statBaseValues[slot.type]} + Lv*{statValues[slot.type]}
+                  </div>
+                )}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <span style={{ fontSize: '12px', color: locks[index] ? '#FF5252' : 'var(--muted)' }}>{locks[index] ? '已鎖定' : '鎖定'}</span>
-                <Switch 
-                  checked={locks[index]} 
-                  onChange={() => toggleLock(index)} 
+                <Switch
+                  checked={locks[index]}
+                  onChange={() => toggleLock(index)}
                   style={{
                     '--checked-color': '#FF5252',
                   }}
@@ -115,7 +130,7 @@ export const MegaPetScreen: React.FC<MegaPetScreenProps> = ({ gameState, unlockM
         <div style={{ marginTop: '20px', textAlign: 'center' }}>
           <p style={{ color: 'var(--muted)', marginBottom: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             重製花費：{rerollCost.toLocaleString()} 鑽石
-            <span 
+            <span
               onClick={() => {
                 Dialog.alert({
                   title: '能力值獲取機率',

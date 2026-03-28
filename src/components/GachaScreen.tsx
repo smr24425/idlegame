@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { GameState, Equipment } from '../types/game';
 import { Card, Button, Dialog, Switch } from 'antd-mobile';
 import { FormattedNumber } from './FormattedNumber';
-import { getItemConfig, getRarityStyles } from '../utils/gameLogic';
+import { getItemConfig, getRarityStyles } from '../utils/logic';
 
 interface GachaScreenProps {
   gameState: GameState;

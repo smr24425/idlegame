@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { GameState, Equipment } from '../types/game';
-import { getItemConfig, getEquipmentValue, getRarityStyles } from '../utils/gameLogic';
+import { getItemConfig, getEquipmentValue, getRarityStyles } from '../utils/logic';
 import { Card, Button, Dialog, Checkbox } from 'antd-mobile';
 import { FormattedNumber } from './FormattedNumber';
 

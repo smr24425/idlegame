@@ -1,7 +1,7 @@
 import { GameState } from '../types/game';
 import { Card } from 'antd-mobile';
 import { useEffect, useState, useRef } from 'react';
-import { getTotalStats, PET_CONFIGS, getArtifactEffectValue } from '../utils/gameLogic';
+import { getTotalStats, PET_CONFIGS, getArtifactEffectValue } from '../utils/logic';
 
 interface CombatScreenProps {
   gameState: GameState;

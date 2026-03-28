@@ -10,11 +10,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@reduxjs/toolkit": "^2.11.2",
     "antd-mobile": "^5.35.0",
     "antd-mobile-icons": "^0.3.0",
     "firebase": "^12.11.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-redux": "^9.2.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",

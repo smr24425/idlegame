@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { GameState } from '../types/game';
-import { ARTIFACT_CONFIGS, getArtifactUpgradeCost, getRarityStyles } from '../utils/gameLogic';
+import { ARTIFACT_CONFIGS, getArtifactUpgradeCost, getRarityStyles } from '../utils/logic';
 import { Card, Button, Toast } from 'antd-mobile';
 
 interface ArtifactScreenProps {
