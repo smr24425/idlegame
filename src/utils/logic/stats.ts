@@ -294,10 +294,7 @@ export const getExpToNextLevel = (level: number): number => {
     const base500 = 250500;
     return base500 + (level - 500) * 5000;
   } else {
-    const base1500 = 5250500;
-    // 1500級後，每級增加的難度不再是固定的 50000
-    // 而是隨等級微幅增長，例如：50000 + (level - 1500) * 200
-    const exponentialGrowth = (level - 1500) * 200;
-    return base1500 + (level - 1500) * (50000 + exponentialGrowth);
+    const base1500 = 251000 + (999) * 5000;
+    return base1500 + (level - 1500) * 50000;
   }
 };
