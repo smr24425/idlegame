@@ -141,100 +141,97 @@ function App() {
   const renderContent = () => {
     return (
       <>
-        <div className="content" style={{ flex: 1, overflow: 'auto' }}>
-          {uiState.activeKey === "main" && (
-            <MainScreen
-              gameState={gameState}
-              onCollect={handleCollect}
-              onChallengeBoss={handleChallengeBoss}
-              autoChallenge={autoChallenge}
-              setAutoChallenge={setAutoChallenge}
-              onNavigate={setActiveKey}
-            />
-          )}
-          {uiState.activeKey === "character" && (
-            <CharacterScreen
-              player={gameState.player}
-              inventoryStones={gameState.inventory.items.find(i => i.id === 'upgrade_stone')?.quantity || 0}
-              onOpenAttributes={() => setShowAttributes(true)}
-              onUnequip={(type) => dispatch(gameActions.unequipItem(type))}
-              onAutoEquipBest={() => dispatch(autoEquipBest())}
-              onEnhanceSlot={(type) => {
-                const res = dispatch(enhanceSlot(type)) as any;
-                if (!res?.success && res?.message) {
-                  Dialog.alert({ content: res.message });
-                }
-              }}
-              onApplyAutoEnhance={() => {
-                const res = dispatch(applyAutoEnhance()) as any;
-                return res?.canUpgradeAny || false;
-              }}
-            />
-          )}
-          {uiState.activeKey === "inventory" && (
-            <InventoryScreen
-              gameState={gameState}
-              onEquip={(id: string) => {
-                const eq = gameState.inventory.equipment.find(e => e.id === id);
-                if (eq) dispatch(gameActions.equipItem(eq));
-              }}
-              onSell={(id: string) => dispatch(gameActions.sellItem(id))}
-              onBulkSell={(filters: number[]) => dispatch(sellItemsByFilter(filters))}
-            />
-          )}
-          {uiState.activeKey === "combat" && (
-            <CombatScreen
-              gameState={gameState}
-              onFightEnd={handleFightEnd}
-              autoChallenge={autoChallenge}
-              setAutoChallenge={setAutoChallenge}
-            />
-          )}
-          {uiState.activeKey === "gacha" && (
-            <GachaScreen
-              gameState={gameState}
-              onDraw={(times, autoSell) => dispatch(drawGacha(times, autoSell)) as any}
-              onDrawPet={(times) => dispatch(drawPetGacha(times)) as any}
-              onDrawArtifact={(times) => dispatch(drawArtifactGacha(times)) as any}
-              onDrawMegaPet={(times) => dispatch(drawMegaPetGacha(times)) as any}
-            />
-          )}
-          {uiState.activeKey === "pets" && (
-            <PetScreen
-              gameState={gameState}
-              equipPet={(id) => dispatch(gameActions.setEquippedPet(id))}
-              upgradePetSlot={() => dispatch(upgradePetSlot()) as any}
-              bulkUpgradePetSlot={() => dispatch(bulkUpgradePetSlot()) as any}
-              upgradePet={(id) => dispatch(upgradePet(id)) as any}
-            />
-          )}
-          {uiState.activeKey === "megapet" && (
-            <MegaPetScreen
-              gameState={gameState}
-              unlockMegaPet={(index) => dispatch(unlockMegaPet(index)) as any}
-              rerollMegaPetStats={(index, l0, l1, l2) => dispatch(rerollMegaPetStats(index, l0, l1, l2)) as any}
-              levelUpMegaPet={(index) => dispatch(levelUpMegaPet(index)) as any}
-            />
-          )}
-          {uiState.activeKey === "artifacts" && (
-            <ArtifactScreen
-              gameState={gameState}
-              upgradeArtifact={(id) => dispatch(upgradeArtifact(id)) as any}
-              equipArtifact={(id, slot) => dispatch(gameActions.equipArtifactSync({ slot, id }))}
-              unequipArtifact={(slot) => dispatch(gameActions.unequipArtifactSync({ slot }))}
-            />
-          )}
-          {uiState.activeKey === "rebirth" && (
-            <RebirthScreen
-              gameState={gameState}
-              onRebirth={() => {
-                dispatch(doRebirth());
-                setActiveKey('main');
-              }}
-            />
-          )}
-        </div>
-
+        {uiState.activeKey === "main" && (
+          <MainScreen
+            gameState={gameState}
+            onCollect={handleCollect}
+            onChallengeBoss={handleChallengeBoss}
+            autoChallenge={autoChallenge}
+            setAutoChallenge={setAutoChallenge}
+            onNavigate={setActiveKey}
+          />
+        )}
+        {uiState.activeKey === "character" && (
+          <CharacterScreen
+            player={gameState.player}
+            inventoryStones={gameState.inventory.items.find(i => i.id === 'upgrade_stone')?.quantity || 0}
+            onOpenAttributes={() => setShowAttributes(true)}
+            onUnequip={(type) => dispatch(gameActions.unequipItem(type))}
+            onAutoEquipBest={() => dispatch(autoEquipBest())}
+            onEnhanceSlot={(type) => {
+              const res = dispatch(enhanceSlot(type)) as any;
+              if (!res?.success && res?.message) {
+                Dialog.alert({ content: res.message });
+              }
+            }}
+            onApplyAutoEnhance={() => {
+              const res = dispatch(applyAutoEnhance()) as any;
+              return res?.canUpgradeAny || false;
+            }}
+          />
+        )}
+        {uiState.activeKey === "inventory" && (
+          <InventoryScreen
+            gameState={gameState}
+            onEquip={(id: string) => {
+              const eq = gameState.inventory.equipment.find(e => e.id === id);
+              if (eq) dispatch(gameActions.equipItem(eq));
+            }}
+            onSell={(id: string) => dispatch(gameActions.sellItem(id))}
+            onBulkSell={(filters: number[]) => dispatch(sellItemsByFilter(filters))}
+          />
+        )}
+        {uiState.activeKey === "combat" && (
+          <CombatScreen
+            gameState={gameState}
+            onFightEnd={handleFightEnd}
+            autoChallenge={autoChallenge}
+            setAutoChallenge={setAutoChallenge}
+          />
+        )}
+        {uiState.activeKey === "gacha" && (
+          <GachaScreen
+            gameState={gameState}
+            onDraw={(times, autoSell) => dispatch(drawGacha(times, autoSell)) as any}
+            onDrawPet={(times) => dispatch(drawPetGacha(times)) as any}
+            onDrawArtifact={(times) => dispatch(drawArtifactGacha(times)) as any}
+            onDrawMegaPet={(times) => dispatch(drawMegaPetGacha(times)) as any}
+          />
+        )}
+        {uiState.activeKey === "pets" && (
+          <PetScreen
+            gameState={gameState}
+            equipPet={(id) => dispatch(gameActions.setEquippedPet(id))}
+            upgradePetSlot={() => dispatch(upgradePetSlot()) as any}
+            bulkUpgradePetSlot={() => dispatch(bulkUpgradePetSlot()) as any}
+            upgradePet={(id) => dispatch(upgradePet(id)) as any}
+          />
+        )}
+        {uiState.activeKey === "megapet" && (
+          <MegaPetScreen
+            gameState={gameState}
+            unlockMegaPet={(index) => dispatch(unlockMegaPet(index)) as any}
+            rerollMegaPetStats={(index, l0, l1, l2) => dispatch(rerollMegaPetStats(index, l0, l1, l2)) as any}
+            levelUpMegaPet={(index) => dispatch(levelUpMegaPet(index)) as any}
+          />
+        )}
+        {uiState.activeKey === "artifacts" && (
+          <ArtifactScreen
+            gameState={gameState}
+            upgradeArtifact={(id) => dispatch(upgradeArtifact(id)) as any}
+            equipArtifact={(id, slot) => dispatch(gameActions.equipArtifactSync({ slot, id }))}
+            unequipArtifact={(slot) => dispatch(gameActions.unequipArtifactSync({ slot }))}
+          />
+        )}
+        {uiState.activeKey === "rebirth" && (
+          <RebirthScreen
+            gameState={gameState}
+            onRebirth={() => {
+              dispatch(doRebirth());
+              setActiveKey('main');
+            }}
+          />
+        )}
       </>
     );
   };
