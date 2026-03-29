@@ -46,12 +46,12 @@ export const MainScreen: React.FC<MainScreenProps> = ({
   const canCollect = timeDiff >= 60; // 滿 60 秒才可領取
 
   return (
-    <div style={{ padding: '20px' }}>
+    <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
       <Card title="收益" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', boxShadow: 'var(--shadow)', color: 'var(--text)' }}>
         <p>經驗/秒: <FormattedNumber value={expPerSecond} /> {stats.expGain > 0 ? <span style={{ color: '#4CAF50' }}>(+{(stats.expGain * 100).toFixed(1)}%)</span> : ''} = <FormattedNumber value={expTotal} /></p>
         <p>金錢/秒: <FormattedNumber value={moneyPerSecond} /> {stats.goldGain > 0 ? <span style={{ color: '#FFD700' }}>(+{(stats.goldGain * 100).toFixed(1)}%)</span> : ''} = <FormattedNumber value={moneyTotal} /></p>
       </Card>
-      <Card title="主畫面" style={{ marginTop: '16px', background: 'var(--card-bg)', border: '1px solid var(--card-border)', boxShadow: 'var(--shadow)', color: 'var(--text)' }}>
+      <Card title="主畫面" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', boxShadow: 'var(--shadow)', color: 'var(--text)' }}>
         <Button
           color="primary"
           onClick={onCollect}
