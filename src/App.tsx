@@ -141,7 +141,7 @@ function App() {
   const renderContent = () => {
     return (
       <>
-        <div className="content">
+        <div className="content" style={{ flex: 1, overflow: 'auto' }}>
           {uiState.activeKey === "main" && (
             <MainScreen
               gameState={gameState}
@@ -356,7 +356,7 @@ function App() {
     <ConfigProvider>
       <div
         style={{
-          height: "100%",
+          height: "100vh",
           width: "100%",
           display: "flex",
           flexDirection: "column",
