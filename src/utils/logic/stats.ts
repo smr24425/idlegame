@@ -89,14 +89,11 @@ export const getGlobalPetPassiveStats = (player: Player) => {
     else if (config.passiveType === 'attackPercentage') atkPercent += effectiveValue;
     else if (config.passiveType === 'defensePercentage') defPercent += effectiveValue;
 
-    if (config.id === player.equippedPetId && config.effectType === 'attackPercentage') {
-      atkPercent += baseValue;
-    }
-    if (config.id === player.equippedPetId && config.effectType === 'healthPercentage') {
-      hpPercent += baseValue;
-    }
-    if (config.id === player.equippedPetId && config.effectType === 'defensePercentage') {
-      defPercent += baseValue;
+    if (config.id === player.equippedPetId) {
+      const effectTypes = Array.isArray(config.effectType) ? config.effectType : [config.effectType];
+      if (effectTypes.includes('attackPercentage' as any)) atkPercent += baseValue;
+      if (effectTypes.includes('healthPercentage' as any)) hpPercent += baseValue;
+      if (effectTypes.includes('defensePercentage' as any)) defPercent += baseValue;
     }
   });
 
