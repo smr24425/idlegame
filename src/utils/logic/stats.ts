@@ -137,7 +137,8 @@ export const getRebirthAttributeBonus = (player: Player) => {
   const defenseBonus = rebirths * 0.2;
   const critRateBonus = rebirths * 0.02;
   const critDamageBonus = rebirths * 10;
-  return { healthBonus, attackBonus, defenseBonus, critRateBonus, critDamageBonus };
+  const bossDamageBonus = rebirths * 0.1;
+  return { healthBonus, attackBonus, defenseBonus, critRateBonus, critDamageBonus, bossDamageBonus };
 };
 
 export const getTotalStats = (player: Player) => {
@@ -235,8 +236,7 @@ export const getTotalStats = (player: Player) => {
   const totalGoldGain = artifactGoldGain + rebirthBonus.goldBonus + megaPetStats.goldGain + petGoldGain;
 
   const artifactBossDamage = getArtifactEffectValue(player, 'finalDamageMultiplier');
-  const rebirthBossDamage = (player.rebirths || 0) * 0.1;
-  const finalBossDamage = megaPetStats.bossDamage + artifactBossDamage + rebirthBossDamage;
+  const finalBossDamage = megaPetStats.bossDamage + artifactBossDamage + rebirthAttributeBonus.bossDamageBonus;
 
   return {
     health: Math.floor(totalHealth),

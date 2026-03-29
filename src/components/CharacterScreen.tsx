@@ -191,13 +191,13 @@ export const CharacterScreen: React.FC<CharacterScreenProps> = ({ player, invent
             </div>
 
             <div style={{ background: 'rgba(0, 0, 0, 0.3)', padding: '15px', borderRadius: '10px', border: '1px solid rgba(0, 229, 255, 0.3)', marginTop: '15px' }}>
-              <h3 style={{ margin: '0 0 10px 0', color: '#00E5FF', textShadow: '0 0 5px rgba(0, 229, 255, 0.8)' }}>額外加成 (神器與寵物)</h3>
+              <h3 style={{ margin: '0 0 10px 0', color: '#00E5FF', textShadow: '0 0 5px rgba(0, 229, 255, 0.8)' }}>額外屬性</h3>
               <p style={{ margin: '5px 0', fontSize: '14px' }}>閃避率: {(getArtifactEffectValue(player, 'dodgeRate') * 100).toFixed(1)}%</p>
               <p style={{ margin: '5px 0', fontSize: '14px' }}>經驗加成: {(playerStats.expGain * 100).toFixed(1)}%</p>
               <p style={{ margin: '5px 0', fontSize: '14px' }}>金幣加成: {(playerStats.goldGain * 100).toFixed(1)}%</p>
               <p style={{ margin: '5px 0', fontSize: '14px' }}>關卡裝備額外掉落: +{(getActivePetBonus(player, 'dropRate') * 100).toFixed(1)}%</p>
               {/* @ts-ignore */}
-              {playerStats.bossDamage > 0 && <p style={{ margin: '5px 0', fontSize: '14px' }}>Boss 傷害提昇: {(playerStats.bossDamage * 100).toFixed(1)}%</p>}
+              {playerStats.bossDamage > 0 && <p style={{ margin: '5px 0', fontSize: '14px' }}>Boss 傷害: {(playerStats.bossDamage * 100).toFixed(1)}%</p>}
               <p style={{ margin: '5px 0', fontSize: '14px' }}>掛機強化石 ({getItemConfig('upgrade_stone').icon}) 掉落機率: {(5 + getArtifactEffectValue(player, 'upgradeStoneDropRate') * 100).toFixed(1)}%</p>
               <p style={{ margin: '5px 0', fontSize: '14px' }}>掛機幼龍碎片 ({getItemConfig('pet_upgrade_fragment').icon}) 掉落機率: {(2 + getArtifactEffectValue(player, 'petStoneDropRate') * 100).toFixed(1)}%</p>
             </div>

@@ -40,6 +40,7 @@ export const RebirthScreen: React.FC<RebirthScreenProps> = ({ gameState, onRebir
           <p>🛡️ 總防禦加成: +{(rebirthAttributeBonus.defenseBonus * 100).toFixed(1)}%</p>
           <p>🎯 額外暴擊率: +{(rebirthAttributeBonus.critRateBonus * 100).toFixed(1)}%</p>
           <p>💥 額外暴擊傷害: +{(rebirthAttributeBonus.critDamageBonus * 100).toFixed(1)}%</p>
+          <p>⚔️ 額外Boss傷害加成: +{(rebirthAttributeBonus.bossDamageBonus * 100).toFixed(1)}%</p>
           <p>⚔️ 裝備欄位等級提升: +{rebirthBonus.equipmentSlotBonus}</p>
           <p>⚔️ 掛機經驗加成和金錢加成 +{rebirthBonus.expBonus * 100}%</p>
         </div>
@@ -53,7 +54,7 @@ export const RebirthScreen: React.FC<RebirthScreenProps> = ({ gameState, onRebir
           目前等級: {player.level} / {2000 + (rebirths * 200)}
         </p>
         <p style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '15px' }}>
-          * 重生後將獲得各基礎屬性 +20%、暴擊率 +2%、暴擊傷害 +1000% 的永久加成。
+          * 重生後將獲得各基礎屬性 +20%、暴擊率 +2%、暴擊傷害 +1000%、boss傷害 +10% 的永久加成。
         </p>
         <p style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '15px' }}>
           * 重生後將獲得裝備欄位等級 +100。
