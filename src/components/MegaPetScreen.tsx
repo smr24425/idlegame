@@ -47,14 +47,25 @@ const statBaseValues: Record<string, string> = {
 };
 
 export const MegaPetScreen: React.FC<MegaPetScreenProps> = ({ gameState, unlockMegaPet, rerollMegaPetStats, levelUpMegaPet }) => {
-  const [locks, setLocks] = useState<[boolean, boolean, boolean]>([false, false, false]);
+  const [allLocks, setAllLocks] = useState<[[boolean, boolean, boolean], [boolean, boolean, boolean], [boolean, boolean, boolean]]>(() => {
+    try {
+      const saved = localStorage.getItem('megaPetLocks');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return [[false, false, false], [false, false, false], [false, false, false]];
+  });
   const [viewIndex, setViewIndex] = useState(0);
   const dispatch = useDispatch();
+
+  const locks = allLocks[viewIndex];
 
   const toggleLock = (index: number) => {
     const newLocks = [...locks] as [boolean, boolean, boolean];
     newLocks[index] = !newLocks[index];
-    setLocks(newLocks);
+    const newAllLocks = [...allLocks] as typeof allLocks;
+    newAllLocks[viewIndex] = newLocks;
+    setAllLocks(newAllLocks);
+    localStorage.setItem('megaPetLocks', JSON.stringify(newAllLocks));
   };
 
   const handleLevelUp = () => {
@@ -85,7 +96,6 @@ export const MegaPetScreen: React.FC<MegaPetScreenProps> = ({ gameState, unlockM
           color={viewIndex === idx ? 'primary' : 'default'}
           onClick={() => {
             setViewIndex(idx);
-            setLocks([false, false, false]); // Reset locks on switch
           }}
           style={{ flex: 1 }}
         >
