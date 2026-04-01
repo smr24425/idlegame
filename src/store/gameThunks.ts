@@ -1,6 +1,6 @@
 import { AppDispatch, RootState } from './store';
 import { gameActions } from './gameSlice';
-import { generateBoss, generateEquipment, getEquipmentValue, generateGachaEquipment, getEnhanceCost, calculateAutoEnhance, calculateBulkPetSlotUpgrade, PET_CONFIGS, PET_UPGRADE_COSTS, getTotalStats, getArtifactEffectValue, ARTIFACT_CONFIGS, getArtifactUpgradeCost, getActivePetBonus, getRebirthBonus } from '../utils/logic';
+import { generateBoss, generateEquipment, getEquipmentValue, generateGachaEquipment, getEnhanceCost, calculateAutoEnhance, calculateBulkPetSlotUpgrade, PET_CONFIGS, PET_UPGRADE_COSTS, getTotalStats, getArtifactEffectValue, ARTIFACT_CONFIGS, getArtifactUpgradeCost, getActivePetBonus, getRebirthBonus, getSalvageStones } from '../utils/logic';
 import { Equipment } from '../types/game';
 
 export const collectRewards = () => (dispatch: AppDispatch, getState: () => RootState) => {
@@ -154,13 +154,15 @@ export const drawGacha = (times: number, isAutoSell: boolean) => (dispatch: AppD
     const toSell = newEquipments.filter(eq => ['white', 'green', 'blue', 'purple', 'gold'].includes(eq.rarity));
     const toKeep = newEquipments.filter(eq => !toSell.includes(eq));
     const totalGainGold = toSell.reduce((sum, item) => sum + getEquipmentValue(item), 0);
+    const totalGainStones = toSell.reduce((sum, item) => sum + getSalvageStones(item), 0);
     
     dispatch(gameActions.sellGachaTrashEquipmentsSync({
       equipments: toKeep,
       cost,
-      goldReturn: totalGainGold
+      goldReturn: totalGainGold,
+      stonesReturn: totalGainStones
     }));
-    return { success: true, equipments: toKeep, totalGainGold };
+    return { success: true, equipments: toKeep, totalGainGold, totalGainStones };
   }
 
   dispatch(gameActions.addGachaEquipmentsSync({ equipments: newEquipments, cost }));

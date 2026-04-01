@@ -179,9 +179,16 @@ export const gameSlice = createSlice({
       state.player.money -= action.payload.cost;
       state.inventory.equipment.push(...action.payload.equipments);
     },
-    sellGachaTrashEquipmentsSync(state, action: PayloadAction<{ equipments: Equipment[], cost: number, goldReturn: number }>) {
+    sellGachaTrashEquipmentsSync(state, action: PayloadAction<{ equipments: Equipment[], cost: number, goldReturn: number, stonesReturn: number }>) {
       state.player.money -= action.payload.cost;
       state.player.money += action.payload.goldReturn;
+      
+      if (action.payload.stonesReturn > 0) {
+        const sIdx = state.inventory.items.findIndex(i => i.id === 'upgrade_stone');
+        if (sIdx >= 0) state.inventory.items[sIdx].quantity += action.payload.stonesReturn;
+        else state.inventory.items.push({ id: 'upgrade_stone', name: '裝備強化石', type: 'material', quantity: action.payload.stonesReturn });
+      }
+
       state.inventory.equipment.push(...action.payload.equipments);
     },
 
